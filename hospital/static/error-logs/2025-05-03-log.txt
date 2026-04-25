@@ -1,0 +1,726 @@
+
+2025-05-03T09:14:34.722821600 HTTP 404 Not Found
+jakarta.ws.rs.NotFoundException: HTTP 404 Not Found
+	at org.jboss.resteasy.reactive.server.handlers.ParameterHandler.handleResult(ParameterHandler.java:113)
+	at org.jboss.resteasy.reactive.server.handlers.ParameterHandler.handle(ParameterHandler.java:59)
+	at io.quarkus.resteasy.reactive.server.runtime.QuarkusResteasyReactiveRequestContext.invokeHandler(QuarkusResteasyReactiveRequestContext.java:137)
+	at org.jboss.resteasy.reactive.common.core.AbstractResteasyReactiveContext.run(AbstractResteasyReactiveContext.java:145)
+	at io.quarkus.vertx.core.runtime.VertxCoreRecorder$14.runWith(VertxCoreRecorder.java:576)
+	at org.jboss.threads.EnhancedQueueExecutor$Task.run(EnhancedQueueExecutor.java:2513)
+	at org.jboss.threads.EnhancedQueueExecutor$ThreadBody.run(EnhancedQueueExecutor.java:1538)
+	at org.jboss.threads.DelegatingRunnable.run(DelegatingRunnable.java:29)
+	at org.jboss.threads.ThreadLocalResettingRunnable.run(ThreadLocalResettingRunnable.java:29)
+	at io.netty.util.concurrent.FastThreadLocalRunnable.run(FastThreadLocalRunnable.java:30)
+	at java.base/java.lang.Thread.run(Thread.java:1623)
+Caused by: java.lang.NumberFormatException: For input string: "undefined"
+	at java.base/java.lang.NumberFormatException.forInputString(NumberFormatException.java:67)
+	at java.base/java.lang.Long.parseLong(Long.java:708)
+	at java.base/java.lang.Long.valueOf(Long.java:1156)
+	at io.quarkus.generated.java.lang.Long$quarkusrestparamConverter$.convert(Unknown Source)
+	at org.jboss.resteasy.reactive.server.handlers.ParameterHandler.handleResult(ParameterHandler.java:108)
+	... 10 more
+
+2025-05-03T09:20:39.981295700 HTTP 404 Not Found
+jakarta.ws.rs.NotFoundException: HTTP 404 Not Found
+	at org.jboss.resteasy.reactive.server.handlers.ParameterHandler.handleResult(ParameterHandler.java:113)
+	at org.jboss.resteasy.reactive.server.handlers.ParameterHandler.handle(ParameterHandler.java:59)
+	at io.quarkus.resteasy.reactive.server.runtime.QuarkusResteasyReactiveRequestContext.invokeHandler(QuarkusResteasyReactiveRequestContext.java:137)
+	at org.jboss.resteasy.reactive.common.core.AbstractResteasyReactiveContext.run(AbstractResteasyReactiveContext.java:145)
+	at io.quarkus.vertx.core.runtime.VertxCoreRecorder$14.runWith(VertxCoreRecorder.java:576)
+	at org.jboss.threads.EnhancedQueueExecutor$Task.run(EnhancedQueueExecutor.java:2513)
+	at org.jboss.threads.EnhancedQueueExecutor$ThreadBody.run(EnhancedQueueExecutor.java:1512)
+	at org.jboss.threads.DelegatingRunnable.run(DelegatingRunnable.java:29)
+	at org.jboss.threads.ThreadLocalResettingRunnable.run(ThreadLocalResettingRunnable.java:29)
+	at io.netty.util.concurrent.FastThreadLocalRunnable.run(FastThreadLocalRunnable.java:30)
+	at java.base/java.lang.Thread.run(Thread.java:1623)
+Caused by: java.lang.NumberFormatException: For input string: "undefined"
+	at java.base/java.lang.NumberFormatException.forInputString(NumberFormatException.java:67)
+	at java.base/java.lang.Long.parseLong(Long.java:708)
+	at java.base/java.lang.Long.valueOf(Long.java:1156)
+	at io.quarkus.generated.java.lang.Long$quarkusrestparamConverter$.convert(Unknown Source)
+	at org.jboss.resteasy.reactive.server.handlers.ParameterHandler.handleResult(ParameterHandler.java:108)
+	... 10 more
+
+2025-05-03T09:24:38.320961100 HTTP 404 Not Found
+jakarta.ws.rs.NotFoundException: HTTP 404 Not Found
+	at org.jboss.resteasy.reactive.server.handlers.ParameterHandler.handleResult(ParameterHandler.java:113)
+	at org.jboss.resteasy.reactive.server.handlers.ParameterHandler.handle(ParameterHandler.java:59)
+	at io.quarkus.resteasy.reactive.server.runtime.QuarkusResteasyReactiveRequestContext.invokeHandler(QuarkusResteasyReactiveRequestContext.java:137)
+	at org.jboss.resteasy.reactive.common.core.AbstractResteasyReactiveContext.run(AbstractResteasyReactiveContext.java:145)
+	at io.quarkus.vertx.core.runtime.VertxCoreRecorder$14.runWith(VertxCoreRecorder.java:576)
+	at org.jboss.threads.EnhancedQueueExecutor$Task.run(EnhancedQueueExecutor.java:2513)
+	at org.jboss.threads.EnhancedQueueExecutor$ThreadBody.run(EnhancedQueueExecutor.java:1512)
+	at org.jboss.threads.DelegatingRunnable.run(DelegatingRunnable.java:29)
+	at org.jboss.threads.ThreadLocalResettingRunnable.run(ThreadLocalResettingRunnable.java:29)
+	at io.netty.util.concurrent.FastThreadLocalRunnable.run(FastThreadLocalRunnable.java:30)
+	at java.base/java.lang.Thread.run(Thread.java:1623)
+Caused by: java.lang.NumberFormatException: For input string: "undefined"
+	at java.base/java.lang.NumberFormatException.forInputString(NumberFormatException.java:67)
+	at java.base/java.lang.Long.parseLong(Long.java:708)
+	at java.base/java.lang.Long.valueOf(Long.java:1156)
+	at io.quarkus.generated.java.lang.Long$quarkusrestparamConverter$.convert(Unknown Source)
+	at org.jboss.resteasy.reactive.server.handlers.ParameterHandler.handleResult(ParameterHandler.java:108)
+	... 10 more
+
+2025-05-03T09:24:47.263700800 HTTP 404 Not Found
+jakarta.ws.rs.NotFoundException: HTTP 404 Not Found
+	at org.jboss.resteasy.reactive.server.handlers.ParameterHandler.handleResult(ParameterHandler.java:113)
+	at org.jboss.resteasy.reactive.server.handlers.ParameterHandler.handle(ParameterHandler.java:59)
+	at io.quarkus.resteasy.reactive.server.runtime.QuarkusResteasyReactiveRequestContext.invokeHandler(QuarkusResteasyReactiveRequestContext.java:137)
+	at org.jboss.resteasy.reactive.common.core.AbstractResteasyReactiveContext.run(AbstractResteasyReactiveContext.java:145)
+	at io.quarkus.vertx.core.runtime.VertxCoreRecorder$14.runWith(VertxCoreRecorder.java:576)
+	at org.jboss.threads.EnhancedQueueExecutor$Task.run(EnhancedQueueExecutor.java:2513)
+	at org.jboss.threads.EnhancedQueueExecutor$ThreadBody.run(EnhancedQueueExecutor.java:1538)
+	at org.jboss.threads.DelegatingRunnable.run(DelegatingRunnable.java:29)
+	at org.jboss.threads.ThreadLocalResettingRunnable.run(ThreadLocalResettingRunnable.java:29)
+	at io.netty.util.concurrent.FastThreadLocalRunnable.run(FastThreadLocalRunnable.java:30)
+	at java.base/java.lang.Thread.run(Thread.java:1623)
+Caused by: java.lang.NumberFormatException: For input string: "undefined"
+	at java.base/java.lang.NumberFormatException.forInputString(NumberFormatException.java:67)
+	at java.base/java.lang.Long.parseLong(Long.java:708)
+	at java.base/java.lang.Long.valueOf(Long.java:1156)
+	at io.quarkus.generated.java.lang.Long$quarkusrestparamConverter$.convert(Unknown Source)
+	at org.jboss.resteasy.reactive.server.handlers.ParameterHandler.handleResult(ParameterHandler.java:108)
+	... 10 more
+
+2025-05-03T09:25:48.335690900 HTTP 404 Not Found
+jakarta.ws.rs.NotFoundException: HTTP 404 Not Found
+	at org.jboss.resteasy.reactive.server.handlers.ParameterHandler.handleResult(ParameterHandler.java:113)
+	at org.jboss.resteasy.reactive.server.handlers.ParameterHandler.handle(ParameterHandler.java:59)
+	at io.quarkus.resteasy.reactive.server.runtime.QuarkusResteasyReactiveRequestContext.invokeHandler(QuarkusResteasyReactiveRequestContext.java:137)
+	at org.jboss.resteasy.reactive.common.core.AbstractResteasyReactiveContext.run(AbstractResteasyReactiveContext.java:145)
+	at io.quarkus.vertx.core.runtime.VertxCoreRecorder$14.runWith(VertxCoreRecorder.java:576)
+	at org.jboss.threads.EnhancedQueueExecutor$Task.run(EnhancedQueueExecutor.java:2513)
+	at org.jboss.threads.EnhancedQueueExecutor$ThreadBody.run(EnhancedQueueExecutor.java:1538)
+	at org.jboss.threads.DelegatingRunnable.run(DelegatingRunnable.java:29)
+	at org.jboss.threads.ThreadLocalResettingRunnable.run(ThreadLocalResettingRunnable.java:29)
+	at io.netty.util.concurrent.FastThreadLocalRunnable.run(FastThreadLocalRunnable.java:30)
+	at java.base/java.lang.Thread.run(Thread.java:1623)
+Caused by: java.lang.NumberFormatException: For input string: "undefined"
+	at java.base/java.lang.NumberFormatException.forInputString(NumberFormatException.java:67)
+	at java.base/java.lang.Long.parseLong(Long.java:708)
+	at java.base/java.lang.Long.valueOf(Long.java:1156)
+	at io.quarkus.generated.java.lang.Long$quarkusrestparamConverter$.convert(Unknown Source)
+	at org.jboss.resteasy.reactive.server.handlers.ParameterHandler.handleResult(ParameterHandler.java:108)
+	... 10 more
+
+2025-05-03T09:26:35.850190 HTTP 404 Not Found
+jakarta.ws.rs.NotFoundException: HTTP 404 Not Found
+	at org.jboss.resteasy.reactive.server.handlers.ParameterHandler.handleResult(ParameterHandler.java:113)
+	at org.jboss.resteasy.reactive.server.handlers.ParameterHandler.handle(ParameterHandler.java:59)
+	at io.quarkus.resteasy.reactive.server.runtime.QuarkusResteasyReactiveRequestContext.invokeHandler(QuarkusResteasyReactiveRequestContext.java:137)
+	at org.jboss.resteasy.reactive.common.core.AbstractResteasyReactiveContext.run(AbstractResteasyReactiveContext.java:145)
+	at io.quarkus.vertx.core.runtime.VertxCoreRecorder$14.runWith(VertxCoreRecorder.java:576)
+	at org.jboss.threads.EnhancedQueueExecutor$Task.run(EnhancedQueueExecutor.java:2513)
+	at org.jboss.threads.EnhancedQueueExecutor$ThreadBody.run(EnhancedQueueExecutor.java:1512)
+	at org.jboss.threads.DelegatingRunnable.run(DelegatingRunnable.java:29)
+	at org.jboss.threads.ThreadLocalResettingRunnable.run(ThreadLocalResettingRunnable.java:29)
+	at io.netty.util.concurrent.FastThreadLocalRunnable.run(FastThreadLocalRunnable.java:30)
+	at java.base/java.lang.Thread.run(Thread.java:1623)
+Caused by: java.lang.NumberFormatException: For input string: "undefined"
+	at java.base/java.lang.NumberFormatException.forInputString(NumberFormatException.java:67)
+	at java.base/java.lang.Long.parseLong(Long.java:708)
+	at java.base/java.lang.Long.valueOf(Long.java:1156)
+	at io.quarkus.generated.java.lang.Long$quarkusrestparamConverter$.convert(Unknown Source)
+	at org.jboss.resteasy.reactive.server.handlers.ParameterHandler.handleResult(ParameterHandler.java:108)
+	... 10 more
+
+2025-05-03T09:26:56.505927100 HTTP 404 Not Found
+jakarta.ws.rs.NotFoundException: HTTP 404 Not Found
+	at org.jboss.resteasy.reactive.server.handlers.ParameterHandler.handleResult(ParameterHandler.java:113)
+	at org.jboss.resteasy.reactive.server.handlers.ParameterHandler.handle(ParameterHandler.java:59)
+	at io.quarkus.resteasy.reactive.server.runtime.QuarkusResteasyReactiveRequestContext.invokeHandler(QuarkusResteasyReactiveRequestContext.java:137)
+	at org.jboss.resteasy.reactive.common.core.AbstractResteasyReactiveContext.run(AbstractResteasyReactiveContext.java:145)
+	at io.quarkus.vertx.core.runtime.VertxCoreRecorder$14.runWith(VertxCoreRecorder.java:576)
+	at org.jboss.threads.EnhancedQueueExecutor$Task.run(EnhancedQueueExecutor.java:2513)
+	at org.jboss.threads.EnhancedQueueExecutor$ThreadBody.run(EnhancedQueueExecutor.java:1538)
+	at org.jboss.threads.DelegatingRunnable.run(DelegatingRunnable.java:29)
+	at org.jboss.threads.ThreadLocalResettingRunnable.run(ThreadLocalResettingRunnable.java:29)
+	at io.netty.util.concurrent.FastThreadLocalRunnable.run(FastThreadLocalRunnable.java:30)
+	at java.base/java.lang.Thread.run(Thread.java:1623)
+Caused by: java.lang.NumberFormatException: For input string: "undefined"
+	at java.base/java.lang.NumberFormatException.forInputString(NumberFormatException.java:67)
+	at java.base/java.lang.Long.parseLong(Long.java:708)
+	at java.base/java.lang.Long.valueOf(Long.java:1156)
+	at io.quarkus.generated.java.lang.Long$quarkusrestparamConverter$.convert(Unknown Source)
+	at org.jboss.resteasy.reactive.server.handlers.ParameterHandler.handleResult(ParameterHandler.java:108)
+	... 10 more
+
+2025-05-03T09:28:14.172965600 HTTP 404 Not Found
+jakarta.ws.rs.NotFoundException: HTTP 404 Not Found
+	at org.jboss.resteasy.reactive.server.handlers.ParameterHandler.handleResult(ParameterHandler.java:113)
+	at org.jboss.resteasy.reactive.server.handlers.ParameterHandler.handle(ParameterHandler.java:59)
+	at io.quarkus.resteasy.reactive.server.runtime.QuarkusResteasyReactiveRequestContext.invokeHandler(QuarkusResteasyReactiveRequestContext.java:137)
+	at org.jboss.resteasy.reactive.common.core.AbstractResteasyReactiveContext.run(AbstractResteasyReactiveContext.java:145)
+	at io.quarkus.vertx.core.runtime.VertxCoreRecorder$14.runWith(VertxCoreRecorder.java:576)
+	at org.jboss.threads.EnhancedQueueExecutor$Task.run(EnhancedQueueExecutor.java:2513)
+	at org.jboss.threads.EnhancedQueueExecutor$ThreadBody.run(EnhancedQueueExecutor.java:1538)
+	at org.jboss.threads.DelegatingRunnable.run(DelegatingRunnable.java:29)
+	at org.jboss.threads.ThreadLocalResettingRunnable.run(ThreadLocalResettingRunnable.java:29)
+	at io.netty.util.concurrent.FastThreadLocalRunnable.run(FastThreadLocalRunnable.java:30)
+	at java.base/java.lang.Thread.run(Thread.java:1623)
+Caused by: java.lang.NumberFormatException: For input string: "undefined"
+	at java.base/java.lang.NumberFormatException.forInputString(NumberFormatException.java:67)
+	at java.base/java.lang.Long.parseLong(Long.java:708)
+	at java.base/java.lang.Long.valueOf(Long.java:1156)
+	at io.quarkus.generated.java.lang.Long$quarkusrestparamConverter$.convert(Unknown Source)
+	at org.jboss.resteasy.reactive.server.handlers.ParameterHandler.handleResult(ParameterHandler.java:108)
+	... 10 more
+
+2025-05-03T09:37:03.383489300 HTTP 404 Not Found
+jakarta.ws.rs.NotFoundException: HTTP 404 Not Found
+	at org.jboss.resteasy.reactive.server.handlers.ParameterHandler.handleResult(ParameterHandler.java:113)
+	at org.jboss.resteasy.reactive.server.handlers.ParameterHandler.handle(ParameterHandler.java:59)
+	at io.quarkus.resteasy.reactive.server.runtime.QuarkusResteasyReactiveRequestContext.invokeHandler(QuarkusResteasyReactiveRequestContext.java:137)
+	at org.jboss.resteasy.reactive.common.core.AbstractResteasyReactiveContext.run(AbstractResteasyReactiveContext.java:145)
+	at io.quarkus.vertx.core.runtime.VertxCoreRecorder$14.runWith(VertxCoreRecorder.java:576)
+	at org.jboss.threads.EnhancedQueueExecutor$Task.run(EnhancedQueueExecutor.java:2513)
+	at org.jboss.threads.EnhancedQueueExecutor$ThreadBody.run(EnhancedQueueExecutor.java:1512)
+	at org.jboss.threads.DelegatingRunnable.run(DelegatingRunnable.java:29)
+	at org.jboss.threads.ThreadLocalResettingRunnable.run(ThreadLocalResettingRunnable.java:29)
+	at io.netty.util.concurrent.FastThreadLocalRunnable.run(FastThreadLocalRunnable.java:30)
+	at java.base/java.lang.Thread.run(Thread.java:1623)
+Caused by: java.lang.NumberFormatException: For input string: "undefined"
+	at java.base/java.lang.NumberFormatException.forInputString(NumberFormatException.java:67)
+	at java.base/java.lang.Long.parseLong(Long.java:708)
+	at java.base/java.lang.Long.valueOf(Long.java:1156)
+	at io.quarkus.generated.java.lang.Long$quarkusrestparamConverter$.convert(Unknown Source)
+	at org.jboss.resteasy.reactive.server.handlers.ParameterHandler.handleResult(ParameterHandler.java:108)
+	... 10 more
+
+2025-05-03T09:37:49.668893800 HTTP 404 Not Found
+jakarta.ws.rs.NotFoundException: HTTP 404 Not Found
+	at org.jboss.resteasy.reactive.server.handlers.ParameterHandler.handleResult(ParameterHandler.java:113)
+	at org.jboss.resteasy.reactive.server.handlers.ParameterHandler.handle(ParameterHandler.java:59)
+	at io.quarkus.resteasy.reactive.server.runtime.QuarkusResteasyReactiveRequestContext.invokeHandler(QuarkusResteasyReactiveRequestContext.java:137)
+	at org.jboss.resteasy.reactive.common.core.AbstractResteasyReactiveContext.run(AbstractResteasyReactiveContext.java:145)
+	at io.quarkus.vertx.core.runtime.VertxCoreRecorder$14.runWith(VertxCoreRecorder.java:576)
+	at org.jboss.threads.EnhancedQueueExecutor$Task.run(EnhancedQueueExecutor.java:2513)
+	at org.jboss.threads.EnhancedQueueExecutor$ThreadBody.run(EnhancedQueueExecutor.java:1512)
+	at org.jboss.threads.DelegatingRunnable.run(DelegatingRunnable.java:29)
+	at org.jboss.threads.ThreadLocalResettingRunnable.run(ThreadLocalResettingRunnable.java:29)
+	at io.netty.util.concurrent.FastThreadLocalRunnable.run(FastThreadLocalRunnable.java:30)
+	at java.base/java.lang.Thread.run(Thread.java:1623)
+Caused by: java.lang.NumberFormatException: For input string: "undefined"
+	at java.base/java.lang.NumberFormatException.forInputString(NumberFormatException.java:67)
+	at java.base/java.lang.Long.parseLong(Long.java:708)
+	at java.base/java.lang.Long.valueOf(Long.java:1156)
+	at io.quarkus.generated.java.lang.Long$quarkusrestparamConverter$.convert(Unknown Source)
+	at org.jboss.resteasy.reactive.server.handlers.ParameterHandler.handleResult(ParameterHandler.java:108)
+	... 10 more
+
+2025-05-03T09:43:35.914968800 HTTP 404 Not Found
+jakarta.ws.rs.NotFoundException: HTTP 404 Not Found
+	at org.jboss.resteasy.reactive.server.handlers.ParameterHandler.handleResult(ParameterHandler.java:113)
+	at org.jboss.resteasy.reactive.server.handlers.ParameterHandler.handle(ParameterHandler.java:59)
+	at io.quarkus.resteasy.reactive.server.runtime.QuarkusResteasyReactiveRequestContext.invokeHandler(QuarkusResteasyReactiveRequestContext.java:137)
+	at org.jboss.resteasy.reactive.common.core.AbstractResteasyReactiveContext.run(AbstractResteasyReactiveContext.java:145)
+	at io.quarkus.vertx.core.runtime.VertxCoreRecorder$14.runWith(VertxCoreRecorder.java:576)
+	at org.jboss.threads.EnhancedQueueExecutor$Task.run(EnhancedQueueExecutor.java:2513)
+	at org.jboss.threads.EnhancedQueueExecutor$ThreadBody.run(EnhancedQueueExecutor.java:1538)
+	at org.jboss.threads.DelegatingRunnable.run(DelegatingRunnable.java:29)
+	at org.jboss.threads.ThreadLocalResettingRunnable.run(ThreadLocalResettingRunnable.java:29)
+	at io.netty.util.concurrent.FastThreadLocalRunnable.run(FastThreadLocalRunnable.java:30)
+	at java.base/java.lang.Thread.run(Thread.java:1623)
+Caused by: java.lang.NumberFormatException: For input string: "undefined"
+	at java.base/java.lang.NumberFormatException.forInputString(NumberFormatException.java:67)
+	at java.base/java.lang.Long.parseLong(Long.java:708)
+	at java.base/java.lang.Long.valueOf(Long.java:1156)
+	at io.quarkus.generated.java.lang.Long$quarkusrestparamConverter$.convert(Unknown Source)
+	at org.jboss.resteasy.reactive.server.handlers.ParameterHandler.handleResult(ParameterHandler.java:108)
+	... 10 more
+
+2025-05-03T09:43:45.183770700 user Not Found
+jakarta.ws.rs.WebApplicationException: user Not Found
+	at org.example.auth.services.UserAuthService.lambda$login$1(UserAuthService.java:49)
+	at java.base/java.util.Optional.orElseThrow(Optional.java:403)
+	at org.example.auth.services.UserAuthService.login(UserAuthService.java:49)
+	at org.example.auth.services.UserAuthService_ClientProxy.login(Unknown Source)
+	at org.example.auth.endpoints.UserAuthController.login(UserAuthController.java:41)
+	at org.example.auth.endpoints.UserAuthController$quarkusrestinvoker$login_9842e0046a4cd69639b7ce8940e4627e5822f3f1.invoke(Unknown Source)
+	at org.jboss.resteasy.reactive.server.handlers.InvocationHandler.handle(InvocationHandler.java:29)
+	at io.quarkus.resteasy.reactive.server.runtime.QuarkusResteasyReactiveRequestContext.invokeHandler(QuarkusResteasyReactiveRequestContext.java:141)
+	at org.jboss.resteasy.reactive.common.core.AbstractResteasyReactiveContext.run(AbstractResteasyReactiveContext.java:145)
+	at io.quarkus.vertx.core.runtime.VertxCoreRecorder$14.runWith(VertxCoreRecorder.java:576)
+	at org.jboss.threads.EnhancedQueueExecutor$Task.run(EnhancedQueueExecutor.java:2513)
+	at org.jboss.threads.EnhancedQueueExecutor$ThreadBody.run(EnhancedQueueExecutor.java:1538)
+	at org.jboss.threads.DelegatingRunnable.run(DelegatingRunnable.java:29)
+	at org.jboss.threads.ThreadLocalResettingRunnable.run(ThreadLocalResettingRunnable.java:29)
+	at io.netty.util.concurrent.FastThreadLocalRunnable.run(FastThreadLocalRunnable.java:30)
+	at java.base/java.lang.Thread.run(Thread.java:1623)
+
+2025-05-03T09:45:16.374302200 user Not Found
+jakarta.ws.rs.WebApplicationException: user Not Found
+	at org.example.auth.services.UserAuthService.lambda$login$1(UserAuthService.java:49)
+	at java.base/java.util.Optional.orElseThrow(Optional.java:403)
+	at org.example.auth.services.UserAuthService.login(UserAuthService.java:49)
+	at org.example.auth.services.UserAuthService_ClientProxy.login(Unknown Source)
+	at org.example.auth.endpoints.UserAuthController.login(UserAuthController.java:41)
+	at org.example.auth.endpoints.UserAuthController$quarkusrestinvoker$login_9842e0046a4cd69639b7ce8940e4627e5822f3f1.invoke(Unknown Source)
+	at org.jboss.resteasy.reactive.server.handlers.InvocationHandler.handle(InvocationHandler.java:29)
+	at io.quarkus.resteasy.reactive.server.runtime.QuarkusResteasyReactiveRequestContext.invokeHandler(QuarkusResteasyReactiveRequestContext.java:141)
+	at org.jboss.resteasy.reactive.common.core.AbstractResteasyReactiveContext.run(AbstractResteasyReactiveContext.java:145)
+	at io.quarkus.vertx.core.runtime.VertxCoreRecorder$14.runWith(VertxCoreRecorder.java:576)
+	at org.jboss.threads.EnhancedQueueExecutor$Task.run(EnhancedQueueExecutor.java:2513)
+	at org.jboss.threads.EnhancedQueueExecutor$ThreadBody.run(EnhancedQueueExecutor.java:1538)
+	at org.jboss.threads.DelegatingRunnable.run(DelegatingRunnable.java:29)
+	at org.jboss.threads.ThreadLocalResettingRunnable.run(ThreadLocalResettingRunnable.java:29)
+	at io.netty.util.concurrent.FastThreadLocalRunnable.run(FastThreadLocalRunnable.java:30)
+	at java.base/java.lang.Thread.run(Thread.java:1623)
+
+2025-05-03T09:45:33.592451700 user Not Found
+jakarta.ws.rs.WebApplicationException: user Not Found
+	at org.example.auth.services.UserAuthService.lambda$login$1(UserAuthService.java:49)
+	at java.base/java.util.Optional.orElseThrow(Optional.java:403)
+	at org.example.auth.services.UserAuthService.login(UserAuthService.java:49)
+	at org.example.auth.services.UserAuthService_ClientProxy.login(Unknown Source)
+	at org.example.auth.endpoints.UserAuthController.login(UserAuthController.java:41)
+	at org.example.auth.endpoints.UserAuthController$quarkusrestinvoker$login_9842e0046a4cd69639b7ce8940e4627e5822f3f1.invoke(Unknown Source)
+	at org.jboss.resteasy.reactive.server.handlers.InvocationHandler.handle(InvocationHandler.java:29)
+	at io.quarkus.resteasy.reactive.server.runtime.QuarkusResteasyReactiveRequestContext.invokeHandler(QuarkusResteasyReactiveRequestContext.java:141)
+	at org.jboss.resteasy.reactive.common.core.AbstractResteasyReactiveContext.run(AbstractResteasyReactiveContext.java:145)
+	at io.quarkus.vertx.core.runtime.VertxCoreRecorder$14.runWith(VertxCoreRecorder.java:576)
+	at org.jboss.threads.EnhancedQueueExecutor$Task.run(EnhancedQueueExecutor.java:2513)
+	at org.jboss.threads.EnhancedQueueExecutor$ThreadBody.run(EnhancedQueueExecutor.java:1538)
+	at org.jboss.threads.DelegatingRunnable.run(DelegatingRunnable.java:29)
+	at org.jboss.threads.ThreadLocalResettingRunnable.run(ThreadLocalResettingRunnable.java:29)
+	at io.netty.util.concurrent.FastThreadLocalRunnable.run(FastThreadLocalRunnable.java:30)
+	at java.base/java.lang.Thread.run(Thread.java:1623)
+
+2025-05-03T09:45:45.533041300 user Not Found
+jakarta.ws.rs.WebApplicationException: user Not Found
+	at org.example.auth.services.UserAuthService.lambda$login$1(UserAuthService.java:49)
+	at java.base/java.util.Optional.orElseThrow(Optional.java:403)
+	at org.example.auth.services.UserAuthService.login(UserAuthService.java:49)
+	at org.example.auth.services.UserAuthService_ClientProxy.login(Unknown Source)
+	at org.example.auth.endpoints.UserAuthController.login(UserAuthController.java:41)
+	at org.example.auth.endpoints.UserAuthController$quarkusrestinvoker$login_9842e0046a4cd69639b7ce8940e4627e5822f3f1.invoke(Unknown Source)
+	at org.jboss.resteasy.reactive.server.handlers.InvocationHandler.handle(InvocationHandler.java:29)
+	at io.quarkus.resteasy.reactive.server.runtime.QuarkusResteasyReactiveRequestContext.invokeHandler(QuarkusResteasyReactiveRequestContext.java:141)
+	at org.jboss.resteasy.reactive.common.core.AbstractResteasyReactiveContext.run(AbstractResteasyReactiveContext.java:145)
+	at io.quarkus.vertx.core.runtime.VertxCoreRecorder$14.runWith(VertxCoreRecorder.java:576)
+	at org.jboss.threads.EnhancedQueueExecutor$Task.run(EnhancedQueueExecutor.java:2513)
+	at org.jboss.threads.EnhancedQueueExecutor$ThreadBody.run(EnhancedQueueExecutor.java:1538)
+	at org.jboss.threads.DelegatingRunnable.run(DelegatingRunnable.java:29)
+	at org.jboss.threads.ThreadLocalResettingRunnable.run(ThreadLocalResettingRunnable.java:29)
+	at io.netty.util.concurrent.FastThreadLocalRunnable.run(FastThreadLocalRunnable.java:30)
+	at java.base/java.lang.Thread.run(Thread.java:1623)
+
+2025-05-03T09:46:35.028458700 user Not Found
+jakarta.ws.rs.WebApplicationException: user Not Found
+	at org.example.auth.services.UserAuthService.lambda$login$1(UserAuthService.java:49)
+	at java.base/java.util.Optional.orElseThrow(Optional.java:403)
+	at org.example.auth.services.UserAuthService.login(UserAuthService.java:49)
+	at org.example.auth.services.UserAuthService_ClientProxy.login(Unknown Source)
+	at org.example.auth.endpoints.UserAuthController.login(UserAuthController.java:41)
+	at org.example.auth.endpoints.UserAuthController$quarkusrestinvoker$login_9842e0046a4cd69639b7ce8940e4627e5822f3f1.invoke(Unknown Source)
+	at org.jboss.resteasy.reactive.server.handlers.InvocationHandler.handle(InvocationHandler.java:29)
+	at io.quarkus.resteasy.reactive.server.runtime.QuarkusResteasyReactiveRequestContext.invokeHandler(QuarkusResteasyReactiveRequestContext.java:141)
+	at org.jboss.resteasy.reactive.common.core.AbstractResteasyReactiveContext.run(AbstractResteasyReactiveContext.java:145)
+	at io.quarkus.vertx.core.runtime.VertxCoreRecorder$14.runWith(VertxCoreRecorder.java:576)
+	at org.jboss.threads.EnhancedQueueExecutor$Task.run(EnhancedQueueExecutor.java:2513)
+	at org.jboss.threads.EnhancedQueueExecutor$ThreadBody.run(EnhancedQueueExecutor.java:1538)
+	at org.jboss.threads.DelegatingRunnable.run(DelegatingRunnable.java:29)
+	at org.jboss.threads.ThreadLocalResettingRunnable.run(ThreadLocalResettingRunnable.java:29)
+	at io.netty.util.concurrent.FastThreadLocalRunnable.run(FastThreadLocalRunnable.java:30)
+	at java.base/java.lang.Thread.run(Thread.java:1623)
+
+2025-05-03T09:47:00.721327700 user Not Found
+jakarta.ws.rs.WebApplicationException: user Not Found
+	at org.example.auth.services.UserAuthService.lambda$login$1(UserAuthService.java:49)
+	at java.base/java.util.Optional.orElseThrow(Optional.java:403)
+	at org.example.auth.services.UserAuthService.login(UserAuthService.java:49)
+	at org.example.auth.services.UserAuthService_ClientProxy.login(Unknown Source)
+	at org.example.auth.endpoints.UserAuthController.login(UserAuthController.java:41)
+	at org.example.auth.endpoints.UserAuthController$quarkusrestinvoker$login_9842e0046a4cd69639b7ce8940e4627e5822f3f1.invoke(Unknown Source)
+	at org.jboss.resteasy.reactive.server.handlers.InvocationHandler.handle(InvocationHandler.java:29)
+	at io.quarkus.resteasy.reactive.server.runtime.QuarkusResteasyReactiveRequestContext.invokeHandler(QuarkusResteasyReactiveRequestContext.java:141)
+	at org.jboss.resteasy.reactive.common.core.AbstractResteasyReactiveContext.run(AbstractResteasyReactiveContext.java:145)
+	at io.quarkus.vertx.core.runtime.VertxCoreRecorder$14.runWith(VertxCoreRecorder.java:576)
+	at org.jboss.threads.EnhancedQueueExecutor$Task.run(EnhancedQueueExecutor.java:2513)
+	at org.jboss.threads.EnhancedQueueExecutor$ThreadBody.run(EnhancedQueueExecutor.java:1538)
+	at org.jboss.threads.DelegatingRunnable.run(DelegatingRunnable.java:29)
+	at org.jboss.threads.ThreadLocalResettingRunnable.run(ThreadLocalResettingRunnable.java:29)
+	at io.netty.util.concurrent.FastThreadLocalRunnable.run(FastThreadLocalRunnable.java:30)
+	at java.base/java.lang.Thread.run(Thread.java:1623)
+
+2025-05-03T09:48:04.698594700 user Not Found
+jakarta.ws.rs.WebApplicationException: user Not Found
+	at org.example.auth.services.UserAuthService.lambda$login$1(UserAuthService.java:49)
+	at java.base/java.util.Optional.orElseThrow(Optional.java:403)
+	at org.example.auth.services.UserAuthService.login(UserAuthService.java:49)
+	at org.example.auth.services.UserAuthService_ClientProxy.login(Unknown Source)
+	at org.example.auth.endpoints.UserAuthController.login(UserAuthController.java:41)
+	at org.example.auth.endpoints.UserAuthController$quarkusrestinvoker$login_9842e0046a4cd69639b7ce8940e4627e5822f3f1.invoke(Unknown Source)
+	at org.jboss.resteasy.reactive.server.handlers.InvocationHandler.handle(InvocationHandler.java:29)
+	at io.quarkus.resteasy.reactive.server.runtime.QuarkusResteasyReactiveRequestContext.invokeHandler(QuarkusResteasyReactiveRequestContext.java:141)
+	at org.jboss.resteasy.reactive.common.core.AbstractResteasyReactiveContext.run(AbstractResteasyReactiveContext.java:145)
+	at io.quarkus.vertx.core.runtime.VertxCoreRecorder$14.runWith(VertxCoreRecorder.java:576)
+	at org.jboss.threads.EnhancedQueueExecutor$Task.run(EnhancedQueueExecutor.java:2513)
+	at org.jboss.threads.EnhancedQueueExecutor$ThreadBody.run(EnhancedQueueExecutor.java:1538)
+	at org.jboss.threads.DelegatingRunnable.run(DelegatingRunnable.java:29)
+	at org.jboss.threads.ThreadLocalResettingRunnable.run(ThreadLocalResettingRunnable.java:29)
+	at io.netty.util.concurrent.FastThreadLocalRunnable.run(FastThreadLocalRunnable.java:30)
+	at java.base/java.lang.Thread.run(Thread.java:1623)
+
+2025-05-03T09:55:52.440893600 user Not Found
+jakarta.ws.rs.WebApplicationException: user Not Found
+	at org.example.auth.services.UserAuthService.lambda$login$1(UserAuthService.java:49)
+	at java.base/java.util.Optional.orElseThrow(Optional.java:403)
+	at org.example.auth.services.UserAuthService.login(UserAuthService.java:49)
+	at org.example.auth.services.UserAuthService_ClientProxy.login(Unknown Source)
+	at org.example.auth.endpoints.UserAuthController.login(UserAuthController.java:41)
+	at org.example.auth.endpoints.UserAuthController$quarkusrestinvoker$login_9842e0046a4cd69639b7ce8940e4627e5822f3f1.invoke(Unknown Source)
+	at org.jboss.resteasy.reactive.server.handlers.InvocationHandler.handle(InvocationHandler.java:29)
+	at io.quarkus.resteasy.reactive.server.runtime.QuarkusResteasyReactiveRequestContext.invokeHandler(QuarkusResteasyReactiveRequestContext.java:141)
+	at org.jboss.resteasy.reactive.common.core.AbstractResteasyReactiveContext.run(AbstractResteasyReactiveContext.java:145)
+	at io.quarkus.vertx.core.runtime.VertxCoreRecorder$14.runWith(VertxCoreRecorder.java:576)
+	at org.jboss.threads.EnhancedQueueExecutor$Task.run(EnhancedQueueExecutor.java:2513)
+	at org.jboss.threads.EnhancedQueueExecutor$ThreadBody.run(EnhancedQueueExecutor.java:1538)
+	at org.jboss.threads.DelegatingRunnable.run(DelegatingRunnable.java:29)
+	at org.jboss.threads.ThreadLocalResettingRunnable.run(ThreadLocalResettingRunnable.java:29)
+	at io.netty.util.concurrent.FastThreadLocalRunnable.run(FastThreadLocalRunnable.java:30)
+	at java.base/java.lang.Thread.run(Thread.java:1623)
+
+2025-05-03T10:00:24.566608800 user Not Found
+jakarta.ws.rs.WebApplicationException: user Not Found
+	at org.example.auth.services.UserAuthService.lambda$login$1(UserAuthService.java:49)
+	at java.base/java.util.Optional.orElseThrow(Optional.java:403)
+	at org.example.auth.services.UserAuthService.login(UserAuthService.java:49)
+	at org.example.auth.services.UserAuthService_ClientProxy.login(Unknown Source)
+	at org.example.auth.endpoints.UserAuthController.login(UserAuthController.java:41)
+	at org.example.auth.endpoints.UserAuthController$quarkusrestinvoker$login_9842e0046a4cd69639b7ce8940e4627e5822f3f1.invoke(Unknown Source)
+	at org.jboss.resteasy.reactive.server.handlers.InvocationHandler.handle(InvocationHandler.java:29)
+	at io.quarkus.resteasy.reactive.server.runtime.QuarkusResteasyReactiveRequestContext.invokeHandler(QuarkusResteasyReactiveRequestContext.java:141)
+	at org.jboss.resteasy.reactive.common.core.AbstractResteasyReactiveContext.run(AbstractResteasyReactiveContext.java:145)
+	at io.quarkus.vertx.core.runtime.VertxCoreRecorder$14.runWith(VertxCoreRecorder.java:576)
+	at org.jboss.threads.EnhancedQueueExecutor$Task.run(EnhancedQueueExecutor.java:2513)
+	at org.jboss.threads.EnhancedQueueExecutor$ThreadBody.run(EnhancedQueueExecutor.java:1538)
+	at org.jboss.threads.DelegatingRunnable.run(DelegatingRunnable.java:29)
+	at org.jboss.threads.ThreadLocalResettingRunnable.run(ThreadLocalResettingRunnable.java:29)
+	at io.netty.util.concurrent.FastThreadLocalRunnable.run(FastThreadLocalRunnable.java:30)
+	at java.base/java.lang.Thread.run(Thread.java:1623)
+
+2025-05-03T10:00:26.305460900 user Not Found
+jakarta.ws.rs.WebApplicationException: user Not Found
+	at org.example.auth.services.UserAuthService.lambda$login$1(UserAuthService.java:49)
+	at java.base/java.util.Optional.orElseThrow(Optional.java:403)
+	at org.example.auth.services.UserAuthService.login(UserAuthService.java:49)
+	at org.example.auth.services.UserAuthService_ClientProxy.login(Unknown Source)
+	at org.example.auth.endpoints.UserAuthController.login(UserAuthController.java:41)
+	at org.example.auth.endpoints.UserAuthController$quarkusrestinvoker$login_9842e0046a4cd69639b7ce8940e4627e5822f3f1.invoke(Unknown Source)
+	at org.jboss.resteasy.reactive.server.handlers.InvocationHandler.handle(InvocationHandler.java:29)
+	at io.quarkus.resteasy.reactive.server.runtime.QuarkusResteasyReactiveRequestContext.invokeHandler(QuarkusResteasyReactiveRequestContext.java:141)
+	at org.jboss.resteasy.reactive.common.core.AbstractResteasyReactiveContext.run(AbstractResteasyReactiveContext.java:145)
+	at io.quarkus.vertx.core.runtime.VertxCoreRecorder$14.runWith(VertxCoreRecorder.java:576)
+	at org.jboss.threads.EnhancedQueueExecutor$Task.run(EnhancedQueueExecutor.java:2513)
+	at org.jboss.threads.EnhancedQueueExecutor$ThreadBody.run(EnhancedQueueExecutor.java:1538)
+	at org.jboss.threads.DelegatingRunnable.run(DelegatingRunnable.java:29)
+	at org.jboss.threads.ThreadLocalResettingRunnable.run(ThreadLocalResettingRunnable.java:29)
+	at io.netty.util.concurrent.FastThreadLocalRunnable.run(FastThreadLocalRunnable.java:30)
+	at java.base/java.lang.Thread.run(Thread.java:1623)
+
+2025-05-03T10:00:32.881705700 user Not Found
+jakarta.ws.rs.WebApplicationException: user Not Found
+	at org.example.auth.services.UserAuthService.lambda$login$1(UserAuthService.java:49)
+	at java.base/java.util.Optional.orElseThrow(Optional.java:403)
+	at org.example.auth.services.UserAuthService.login(UserAuthService.java:49)
+	at org.example.auth.services.UserAuthService_ClientProxy.login(Unknown Source)
+	at org.example.auth.endpoints.UserAuthController.login(UserAuthController.java:41)
+	at org.example.auth.endpoints.UserAuthController$quarkusrestinvoker$login_9842e0046a4cd69639b7ce8940e4627e5822f3f1.invoke(Unknown Source)
+	at org.jboss.resteasy.reactive.server.handlers.InvocationHandler.handle(InvocationHandler.java:29)
+	at io.quarkus.resteasy.reactive.server.runtime.QuarkusResteasyReactiveRequestContext.invokeHandler(QuarkusResteasyReactiveRequestContext.java:141)
+	at org.jboss.resteasy.reactive.common.core.AbstractResteasyReactiveContext.run(AbstractResteasyReactiveContext.java:145)
+	at io.quarkus.vertx.core.runtime.VertxCoreRecorder$14.runWith(VertxCoreRecorder.java:576)
+	at org.jboss.threads.EnhancedQueueExecutor$Task.run(EnhancedQueueExecutor.java:2513)
+	at org.jboss.threads.EnhancedQueueExecutor$ThreadBody.run(EnhancedQueueExecutor.java:1538)
+	at org.jboss.threads.DelegatingRunnable.run(DelegatingRunnable.java:29)
+	at org.jboss.threads.ThreadLocalResettingRunnable.run(ThreadLocalResettingRunnable.java:29)
+	at io.netty.util.concurrent.FastThreadLocalRunnable.run(FastThreadLocalRunnable.java:30)
+	at java.base/java.lang.Thread.run(Thread.java:1623)
+
+2025-05-03T10:00:58.959902 user Not Found
+jakarta.ws.rs.WebApplicationException: user Not Found
+	at org.example.auth.services.UserAuthService.lambda$login$1(UserAuthService.java:49)
+	at java.base/java.util.Optional.orElseThrow(Optional.java:403)
+	at org.example.auth.services.UserAuthService.login(UserAuthService.java:49)
+	at org.example.auth.services.UserAuthService_ClientProxy.login(Unknown Source)
+	at org.example.auth.endpoints.UserAuthController.login(UserAuthController.java:41)
+	at org.example.auth.endpoints.UserAuthController$quarkusrestinvoker$login_9842e0046a4cd69639b7ce8940e4627e5822f3f1.invoke(Unknown Source)
+	at org.jboss.resteasy.reactive.server.handlers.InvocationHandler.handle(InvocationHandler.java:29)
+	at io.quarkus.resteasy.reactive.server.runtime.QuarkusResteasyReactiveRequestContext.invokeHandler(QuarkusResteasyReactiveRequestContext.java:141)
+	at org.jboss.resteasy.reactive.common.core.AbstractResteasyReactiveContext.run(AbstractResteasyReactiveContext.java:145)
+	at io.quarkus.vertx.core.runtime.VertxCoreRecorder$14.runWith(VertxCoreRecorder.java:576)
+	at org.jboss.threads.EnhancedQueueExecutor$Task.run(EnhancedQueueExecutor.java:2513)
+	at org.jboss.threads.EnhancedQueueExecutor$ThreadBody.run(EnhancedQueueExecutor.java:1538)
+	at org.jboss.threads.DelegatingRunnable.run(DelegatingRunnable.java:29)
+	at org.jboss.threads.ThreadLocalResettingRunnable.run(ThreadLocalResettingRunnable.java:29)
+	at io.netty.util.concurrent.FastThreadLocalRunnable.run(FastThreadLocalRunnable.java:30)
+	at java.base/java.lang.Thread.run(Thread.java:1623)
+
+2025-05-03T10:01:20.613285400 user Not Found
+jakarta.ws.rs.WebApplicationException: user Not Found
+	at org.example.auth.services.UserAuthService.lambda$login$1(UserAuthService.java:49)
+	at java.base/java.util.Optional.orElseThrow(Optional.java:403)
+	at org.example.auth.services.UserAuthService.login(UserAuthService.java:49)
+	at org.example.auth.services.UserAuthService_ClientProxy.login(Unknown Source)
+	at org.example.auth.endpoints.UserAuthController.login(UserAuthController.java:41)
+	at org.example.auth.endpoints.UserAuthController$quarkusrestinvoker$login_9842e0046a4cd69639b7ce8940e4627e5822f3f1.invoke(Unknown Source)
+	at org.jboss.resteasy.reactive.server.handlers.InvocationHandler.handle(InvocationHandler.java:29)
+	at io.quarkus.resteasy.reactive.server.runtime.QuarkusResteasyReactiveRequestContext.invokeHandler(QuarkusResteasyReactiveRequestContext.java:141)
+	at org.jboss.resteasy.reactive.common.core.AbstractResteasyReactiveContext.run(AbstractResteasyReactiveContext.java:145)
+	at io.quarkus.vertx.core.runtime.VertxCoreRecorder$14.runWith(VertxCoreRecorder.java:576)
+	at org.jboss.threads.EnhancedQueueExecutor$Task.run(EnhancedQueueExecutor.java:2513)
+	at org.jboss.threads.EnhancedQueueExecutor$ThreadBody.run(EnhancedQueueExecutor.java:1538)
+	at org.jboss.threads.DelegatingRunnable.run(DelegatingRunnable.java:29)
+	at org.jboss.threads.ThreadLocalResettingRunnable.run(ThreadLocalResettingRunnable.java:29)
+	at io.netty.util.concurrent.FastThreadLocalRunnable.run(FastThreadLocalRunnable.java:30)
+	at java.base/java.lang.Thread.run(Thread.java:1623)
+
+2025-05-03T10:01:29.817703300 user Not Found
+jakarta.ws.rs.WebApplicationException: user Not Found
+	at org.example.auth.services.UserAuthService.lambda$login$1(UserAuthService.java:49)
+	at java.base/java.util.Optional.orElseThrow(Optional.java:403)
+	at org.example.auth.services.UserAuthService.login(UserAuthService.java:49)
+	at org.example.auth.services.UserAuthService_ClientProxy.login(Unknown Source)
+	at org.example.auth.endpoints.UserAuthController.login(UserAuthController.java:41)
+	at org.example.auth.endpoints.UserAuthController$quarkusrestinvoker$login_9842e0046a4cd69639b7ce8940e4627e5822f3f1.invoke(Unknown Source)
+	at org.jboss.resteasy.reactive.server.handlers.InvocationHandler.handle(InvocationHandler.java:29)
+	at io.quarkus.resteasy.reactive.server.runtime.QuarkusResteasyReactiveRequestContext.invokeHandler(QuarkusResteasyReactiveRequestContext.java:141)
+	at org.jboss.resteasy.reactive.common.core.AbstractResteasyReactiveContext.run(AbstractResteasyReactiveContext.java:145)
+	at io.quarkus.vertx.core.runtime.VertxCoreRecorder$14.runWith(VertxCoreRecorder.java:576)
+	at org.jboss.threads.EnhancedQueueExecutor$Task.run(EnhancedQueueExecutor.java:2513)
+	at org.jboss.threads.EnhancedQueueExecutor$ThreadBody.run(EnhancedQueueExecutor.java:1538)
+	at org.jboss.threads.DelegatingRunnable.run(DelegatingRunnable.java:29)
+	at org.jboss.threads.ThreadLocalResettingRunnable.run(ThreadLocalResettingRunnable.java:29)
+	at io.netty.util.concurrent.FastThreadLocalRunnable.run(FastThreadLocalRunnable.java:30)
+	at java.base/java.lang.Thread.run(Thread.java:1623)
+
+2025-05-03T10:01:30.462055600 user Not Found
+jakarta.ws.rs.WebApplicationException: user Not Found
+	at org.example.auth.services.UserAuthService.lambda$login$1(UserAuthService.java:49)
+	at java.base/java.util.Optional.orElseThrow(Optional.java:403)
+	at org.example.auth.services.UserAuthService.login(UserAuthService.java:49)
+	at org.example.auth.services.UserAuthService_ClientProxy.login(Unknown Source)
+	at org.example.auth.endpoints.UserAuthController.login(UserAuthController.java:41)
+	at org.example.auth.endpoints.UserAuthController$quarkusrestinvoker$login_9842e0046a4cd69639b7ce8940e4627e5822f3f1.invoke(Unknown Source)
+	at org.jboss.resteasy.reactive.server.handlers.InvocationHandler.handle(InvocationHandler.java:29)
+	at io.quarkus.resteasy.reactive.server.runtime.QuarkusResteasyReactiveRequestContext.invokeHandler(QuarkusResteasyReactiveRequestContext.java:141)
+	at org.jboss.resteasy.reactive.common.core.AbstractResteasyReactiveContext.run(AbstractResteasyReactiveContext.java:145)
+	at io.quarkus.vertx.core.runtime.VertxCoreRecorder$14.runWith(VertxCoreRecorder.java:576)
+	at org.jboss.threads.EnhancedQueueExecutor$Task.run(EnhancedQueueExecutor.java:2513)
+	at org.jboss.threads.EnhancedQueueExecutor$ThreadBody.run(EnhancedQueueExecutor.java:1538)
+	at org.jboss.threads.DelegatingRunnable.run(DelegatingRunnable.java:29)
+	at org.jboss.threads.ThreadLocalResettingRunnable.run(ThreadLocalResettingRunnable.java:29)
+	at io.netty.util.concurrent.FastThreadLocalRunnable.run(FastThreadLocalRunnable.java:30)
+	at java.base/java.lang.Thread.run(Thread.java:1623)
+
+2025-05-03T10:01:40.277321100 HTTP 404 Not Found
+jakarta.ws.rs.NotFoundException: HTTP 404 Not Found
+	at org.jboss.resteasy.reactive.server.handlers.ParameterHandler.handleResult(ParameterHandler.java:113)
+	at org.jboss.resteasy.reactive.server.handlers.ParameterHandler.handle(ParameterHandler.java:59)
+	at io.quarkus.resteasy.reactive.server.runtime.QuarkusResteasyReactiveRequestContext.invokeHandler(QuarkusResteasyReactiveRequestContext.java:137)
+	at org.jboss.resteasy.reactive.common.core.AbstractResteasyReactiveContext.run(AbstractResteasyReactiveContext.java:145)
+	at io.quarkus.vertx.core.runtime.VertxCoreRecorder$14.runWith(VertxCoreRecorder.java:576)
+	at org.jboss.threads.EnhancedQueueExecutor$Task.run(EnhancedQueueExecutor.java:2513)
+	at org.jboss.threads.EnhancedQueueExecutor$ThreadBody.run(EnhancedQueueExecutor.java:1538)
+	at org.jboss.threads.DelegatingRunnable.run(DelegatingRunnable.java:29)
+	at org.jboss.threads.ThreadLocalResettingRunnable.run(ThreadLocalResettingRunnable.java:29)
+	at io.netty.util.concurrent.FastThreadLocalRunnable.run(FastThreadLocalRunnable.java:30)
+	at java.base/java.lang.Thread.run(Thread.java:1623)
+Caused by: java.lang.NumberFormatException: For input string: "undefined"
+	at java.base/java.lang.NumberFormatException.forInputString(NumberFormatException.java:67)
+	at java.base/java.lang.Long.parseLong(Long.java:708)
+	at java.base/java.lang.Long.valueOf(Long.java:1156)
+	at io.quarkus.generated.java.lang.Long$quarkusrestparamConverter$.convert(Unknown Source)
+	at org.jboss.resteasy.reactive.server.handlers.ParameterHandler.handleResult(ParameterHandler.java:108)
+	... 10 more
+
+2025-05-03T10:25:31.950614600 HTTP 404 Not Found
+jakarta.ws.rs.NotFoundException: HTTP 404 Not Found
+	at org.jboss.resteasy.reactive.server.handlers.ParameterHandler.handleResult(ParameterHandler.java:113)
+	at org.jboss.resteasy.reactive.server.handlers.ParameterHandler.handle(ParameterHandler.java:59)
+	at io.quarkus.resteasy.reactive.server.runtime.QuarkusResteasyReactiveRequestContext.invokeHandler(QuarkusResteasyReactiveRequestContext.java:137)
+	at org.jboss.resteasy.reactive.common.core.AbstractResteasyReactiveContext.run(AbstractResteasyReactiveContext.java:145)
+	at io.quarkus.vertx.core.runtime.VertxCoreRecorder$14.runWith(VertxCoreRecorder.java:576)
+	at org.jboss.threads.EnhancedQueueExecutor$Task.run(EnhancedQueueExecutor.java:2513)
+	at org.jboss.threads.EnhancedQueueExecutor$ThreadBody.run(EnhancedQueueExecutor.java:1538)
+	at org.jboss.threads.DelegatingRunnable.run(DelegatingRunnable.java:29)
+	at org.jboss.threads.ThreadLocalResettingRunnable.run(ThreadLocalResettingRunnable.java:29)
+	at io.netty.util.concurrent.FastThreadLocalRunnable.run(FastThreadLocalRunnable.java:30)
+	at java.base/java.lang.Thread.run(Thread.java:1623)
+Caused by: java.lang.NumberFormatException: For input string: "undefined"
+	at java.base/java.lang.NumberFormatException.forInputString(NumberFormatException.java:67)
+	at java.base/java.lang.Long.parseLong(Long.java:708)
+	at java.base/java.lang.Long.valueOf(Long.java:1156)
+	at io.quarkus.generated.java.lang.Long$quarkusrestparamConverter$.convert(Unknown Source)
+	at org.jboss.resteasy.reactive.server.handlers.ParameterHandler.handleResult(ParameterHandler.java:108)
+	... 10 more
+
+2025-05-03T11:39:24.367170900 HTTP 404 Not Found
+jakarta.ws.rs.NotFoundException: HTTP 404 Not Found
+	at org.jboss.resteasy.reactive.server.handlers.ParameterHandler.handleResult(ParameterHandler.java:113)
+	at org.jboss.resteasy.reactive.server.handlers.ParameterHandler.handle(ParameterHandler.java:59)
+	at io.quarkus.resteasy.reactive.server.runtime.QuarkusResteasyReactiveRequestContext.invokeHandler(QuarkusResteasyReactiveRequestContext.java:137)
+	at org.jboss.resteasy.reactive.common.core.AbstractResteasyReactiveContext.run(AbstractResteasyReactiveContext.java:145)
+	at io.quarkus.vertx.core.runtime.VertxCoreRecorder$14.runWith(VertxCoreRecorder.java:576)
+	at org.jboss.threads.EnhancedQueueExecutor$Task.run(EnhancedQueueExecutor.java:2513)
+	at org.jboss.threads.EnhancedQueueExecutor$ThreadBody.run(EnhancedQueueExecutor.java:1538)
+	at org.jboss.threads.DelegatingRunnable.run(DelegatingRunnable.java:29)
+	at org.jboss.threads.ThreadLocalResettingRunnable.run(ThreadLocalResettingRunnable.java:29)
+	at io.netty.util.concurrent.FastThreadLocalRunnable.run(FastThreadLocalRunnable.java:30)
+	at java.base/java.lang.Thread.run(Thread.java:1623)
+Caused by: java.lang.NumberFormatException: For input string: "undefined"
+	at java.base/java.lang.NumberFormatException.forInputString(NumberFormatException.java:67)
+	at java.base/java.lang.Long.parseLong(Long.java:708)
+	at java.base/java.lang.Long.valueOf(Long.java:1156)
+	at io.quarkus.generated.java.lang.Long$quarkusrestparamConverter$.convert(Unknown Source)
+	at org.jboss.resteasy.reactive.server.handlers.ParameterHandler.handleResult(ParameterHandler.java:108)
+	... 10 more
+
+2025-05-03T11:39:29.734708900 HTTP 404 Not Found
+jakarta.ws.rs.NotFoundException: HTTP 404 Not Found
+	at org.jboss.resteasy.reactive.server.handlers.ParameterHandler.handleResult(ParameterHandler.java:113)
+	at org.jboss.resteasy.reactive.server.handlers.ParameterHandler.handle(ParameterHandler.java:59)
+	at io.quarkus.resteasy.reactive.server.runtime.QuarkusResteasyReactiveRequestContext.invokeHandler(QuarkusResteasyReactiveRequestContext.java:137)
+	at org.jboss.resteasy.reactive.common.core.AbstractResteasyReactiveContext.run(AbstractResteasyReactiveContext.java:145)
+	at io.quarkus.vertx.core.runtime.VertxCoreRecorder$14.runWith(VertxCoreRecorder.java:576)
+	at org.jboss.threads.EnhancedQueueExecutor$Task.run(EnhancedQueueExecutor.java:2513)
+	at org.jboss.threads.EnhancedQueueExecutor$ThreadBody.run(EnhancedQueueExecutor.java:1538)
+	at org.jboss.threads.DelegatingRunnable.run(DelegatingRunnable.java:29)
+	at org.jboss.threads.ThreadLocalResettingRunnable.run(ThreadLocalResettingRunnable.java:29)
+	at io.netty.util.concurrent.FastThreadLocalRunnable.run(FastThreadLocalRunnable.java:30)
+	at java.base/java.lang.Thread.run(Thread.java:1623)
+Caused by: java.lang.NumberFormatException: For input string: "undefined"
+	at java.base/java.lang.NumberFormatException.forInputString(NumberFormatException.java:67)
+	at java.base/java.lang.Long.parseLong(Long.java:708)
+	at java.base/java.lang.Long.valueOf(Long.java:1156)
+	at io.quarkus.generated.java.lang.Long$quarkusrestparamConverter$.convert(Unknown Source)
+	at org.jboss.resteasy.reactive.server.handlers.ParameterHandler.handleResult(ParameterHandler.java:108)
+	... 10 more
+
+2025-05-03T11:39:53.471930400 HTTP 404 Not Found
+jakarta.ws.rs.NotFoundException: HTTP 404 Not Found
+	at org.jboss.resteasy.reactive.server.handlers.ParameterHandler.handleResult(ParameterHandler.java:113)
+	at org.jboss.resteasy.reactive.server.handlers.ParameterHandler.handle(ParameterHandler.java:59)
+	at io.quarkus.resteasy.reactive.server.runtime.QuarkusResteasyReactiveRequestContext.invokeHandler(QuarkusResteasyReactiveRequestContext.java:137)
+	at org.jboss.resteasy.reactive.common.core.AbstractResteasyReactiveContext.run(AbstractResteasyReactiveContext.java:145)
+	at io.quarkus.vertx.core.runtime.VertxCoreRecorder$14.runWith(VertxCoreRecorder.java:576)
+	at org.jboss.threads.EnhancedQueueExecutor$Task.run(EnhancedQueueExecutor.java:2513)
+	at org.jboss.threads.EnhancedQueueExecutor$ThreadBody.run(EnhancedQueueExecutor.java:1538)
+	at org.jboss.threads.DelegatingRunnable.run(DelegatingRunnable.java:29)
+	at org.jboss.threads.ThreadLocalResettingRunnable.run(ThreadLocalResettingRunnable.java:29)
+	at io.netty.util.concurrent.FastThreadLocalRunnable.run(FastThreadLocalRunnable.java:30)
+	at java.base/java.lang.Thread.run(Thread.java:1623)
+Caused by: java.lang.NumberFormatException: For input string: "undefined"
+	at java.base/java.lang.NumberFormatException.forInputString(NumberFormatException.java:67)
+	at java.base/java.lang.Long.parseLong(Long.java:708)
+	at java.base/java.lang.Long.valueOf(Long.java:1156)
+	at io.quarkus.generated.java.lang.Long$quarkusrestparamConverter$.convert(Unknown Source)
+	at org.jboss.resteasy.reactive.server.handlers.ParameterHandler.handleResult(ParameterHandler.java:108)
+	... 10 more
+
+2025-05-03T11:49:31.202668600 HTTP 404 Not Found
+jakarta.ws.rs.NotFoundException: HTTP 404 Not Found
+	at org.jboss.resteasy.reactive.server.handlers.ParameterHandler.handleResult(ParameterHandler.java:113)
+	at org.jboss.resteasy.reactive.server.handlers.ParameterHandler.handle(ParameterHandler.java:59)
+	at io.quarkus.resteasy.reactive.server.runtime.QuarkusResteasyReactiveRequestContext.invokeHandler(QuarkusResteasyReactiveRequestContext.java:137)
+	at org.jboss.resteasy.reactive.common.core.AbstractResteasyReactiveContext.run(AbstractResteasyReactiveContext.java:145)
+	at io.quarkus.vertx.core.runtime.VertxCoreRecorder$14.runWith(VertxCoreRecorder.java:576)
+	at org.jboss.threads.EnhancedQueueExecutor$Task.run(EnhancedQueueExecutor.java:2513)
+	at org.jboss.threads.EnhancedQueueExecutor$ThreadBody.run(EnhancedQueueExecutor.java:1512)
+	at org.jboss.threads.DelegatingRunnable.run(DelegatingRunnable.java:29)
+	at org.jboss.threads.ThreadLocalResettingRunnable.run(ThreadLocalResettingRunnable.java:29)
+	at io.netty.util.concurrent.FastThreadLocalRunnable.run(FastThreadLocalRunnable.java:30)
+	at java.base/java.lang.Thread.run(Thread.java:1623)
+Caused by: java.lang.NumberFormatException: For input string: "undefined"
+	at java.base/java.lang.NumberFormatException.forInputString(NumberFormatException.java:67)
+	at java.base/java.lang.Long.parseLong(Long.java:708)
+	at java.base/java.lang.Long.valueOf(Long.java:1156)
+	at io.quarkus.generated.java.lang.Long$quarkusrestparamConverter$.convert(Unknown Source)
+	at org.jboss.resteasy.reactive.server.handlers.ParameterHandler.handleResult(ParameterHandler.java:108)
+	... 10 more
+
+2025-05-03T11:50:27.018842800 HTTP 404 Not Found
+jakarta.ws.rs.NotFoundException: HTTP 404 Not Found
+	at org.jboss.resteasy.reactive.server.handlers.ParameterHandler.handleResult(ParameterHandler.java:113)
+	at org.jboss.resteasy.reactive.server.handlers.ParameterHandler.handle(ParameterHandler.java:59)
+	at io.quarkus.resteasy.reactive.server.runtime.QuarkusResteasyReactiveRequestContext.invokeHandler(QuarkusResteasyReactiveRequestContext.java:137)
+	at org.jboss.resteasy.reactive.common.core.AbstractResteasyReactiveContext.run(AbstractResteasyReactiveContext.java:145)
+	at io.quarkus.vertx.core.runtime.VertxCoreRecorder$14.runWith(VertxCoreRecorder.java:576)
+	at org.jboss.threads.EnhancedQueueExecutor$Task.run(EnhancedQueueExecutor.java:2513)
+	at org.jboss.threads.EnhancedQueueExecutor$ThreadBody.run(EnhancedQueueExecutor.java:1538)
+	at org.jboss.threads.DelegatingRunnable.run(DelegatingRunnable.java:29)
+	at org.jboss.threads.ThreadLocalResettingRunnable.run(ThreadLocalResettingRunnable.java:29)
+	at io.netty.util.concurrent.FastThreadLocalRunnable.run(FastThreadLocalRunnable.java:30)
+	at java.base/java.lang.Thread.run(Thread.java:1623)
+Caused by: java.lang.NumberFormatException: For input string: "undefined"
+	at java.base/java.lang.NumberFormatException.forInputString(NumberFormatException.java:67)
+	at java.base/java.lang.Long.parseLong(Long.java:708)
+	at java.base/java.lang.Long.valueOf(Long.java:1156)
+	at io.quarkus.generated.java.lang.Long$quarkusrestparamConverter$.convert(Unknown Source)
+	at org.jboss.resteasy.reactive.server.handlers.ParameterHandler.handleResult(ParameterHandler.java:108)
+	... 10 more
+
+2025-05-03T11:57:27.988132600 HTTP 404 Not Found
+jakarta.ws.rs.NotFoundException: HTTP 404 Not Found
+	at org.jboss.resteasy.reactive.server.handlers.ParameterHandler.handleResult(ParameterHandler.java:113)
+	at org.jboss.resteasy.reactive.server.handlers.ParameterHandler.handle(ParameterHandler.java:59)
+	at io.quarkus.resteasy.reactive.server.runtime.QuarkusResteasyReactiveRequestContext.invokeHandler(QuarkusResteasyReactiveRequestContext.java:137)
+	at org.jboss.resteasy.reactive.common.core.AbstractResteasyReactiveContext.run(AbstractResteasyReactiveContext.java:145)
+	at io.quarkus.vertx.core.runtime.VertxCoreRecorder$14.runWith(VertxCoreRecorder.java:576)
+	at org.jboss.threads.EnhancedQueueExecutor$Task.run(EnhancedQueueExecutor.java:2513)
+	at org.jboss.threads.EnhancedQueueExecutor$ThreadBody.run(EnhancedQueueExecutor.java:1512)
+	at org.jboss.threads.DelegatingRunnable.run(DelegatingRunnable.java:29)
+	at org.jboss.threads.ThreadLocalResettingRunnable.run(ThreadLocalResettingRunnable.java:29)
+	at io.netty.util.concurrent.FastThreadLocalRunnable.run(FastThreadLocalRunnable.java:30)
+	at java.base/java.lang.Thread.run(Thread.java:1623)
+Caused by: java.lang.NumberFormatException: For input string: "undefined"
+	at java.base/java.lang.NumberFormatException.forInputString(NumberFormatException.java:67)
+	at java.base/java.lang.Long.parseLong(Long.java:708)
+	at java.base/java.lang.Long.valueOf(Long.java:1156)
+	at io.quarkus.generated.java.lang.Long$quarkusrestparamConverter$.convert(Unknown Source)
+	at org.jboss.resteasy.reactive.server.handlers.ParameterHandler.handleResult(ParameterHandler.java:108)
+	... 10 more
+
+2025-05-03T12:00:32.186301200 HTTP 404 Not Found
+jakarta.ws.rs.NotFoundException: HTTP 404 Not Found
+	at org.jboss.resteasy.reactive.server.handlers.ParameterHandler.handleResult(ParameterHandler.java:113)
+	at org.jboss.resteasy.reactive.server.handlers.ParameterHandler.handle(ParameterHandler.java:59)
+	at io.quarkus.resteasy.reactive.server.runtime.QuarkusResteasyReactiveRequestContext.invokeHandler(QuarkusResteasyReactiveRequestContext.java:137)
+	at org.jboss.resteasy.reactive.common.core.AbstractResteasyReactiveContext.run(AbstractResteasyReactiveContext.java:145)
+	at io.quarkus.vertx.core.runtime.VertxCoreRecorder$14.runWith(VertxCoreRecorder.java:576)
+	at org.jboss.threads.EnhancedQueueExecutor$Task.run(EnhancedQueueExecutor.java:2513)
+	at org.jboss.threads.EnhancedQueueExecutor$ThreadBody.run(EnhancedQueueExecutor.java:1512)
+	at org.jboss.threads.DelegatingRunnable.run(DelegatingRunnable.java:29)
+	at org.jboss.threads.ThreadLocalResettingRunnable.run(ThreadLocalResettingRunnable.java:29)
+	at io.netty.util.concurrent.FastThreadLocalRunnable.run(FastThreadLocalRunnable.java:30)
+	at java.base/java.lang.Thread.run(Thread.java:1623)
+Caused by: java.lang.NumberFormatException: For input string: "undefined"
+	at java.base/java.lang.NumberFormatException.forInputString(NumberFormatException.java:67)
+	at java.base/java.lang.Long.parseLong(Long.java:708)
+	at java.base/java.lang.Long.valueOf(Long.java:1156)
+	at io.quarkus.generated.java.lang.Long$quarkusrestparamConverter$.convert(Unknown Source)
+	at org.jboss.resteasy.reactive.server.handlers.ParameterHandler.handleResult(ParameterHandler.java:108)
+	... 10 more
+
+2025-05-03T15:08:45.666965800 HTTP 404 Not Found
+jakarta.ws.rs.NotFoundException: HTTP 404 Not Found
+	at org.jboss.resteasy.reactive.server.handlers.ParameterHandler.handleResult(ParameterHandler.java:113)
+	at org.jboss.resteasy.reactive.server.handlers.ParameterHandler.handle(ParameterHandler.java:59)
+	at io.quarkus.resteasy.reactive.server.runtime.QuarkusResteasyReactiveRequestContext.invokeHandler(QuarkusResteasyReactiveRequestContext.java:137)
+	at org.jboss.resteasy.reactive.common.core.AbstractResteasyReactiveContext.run(AbstractResteasyReactiveContext.java:145)
+	at io.quarkus.vertx.core.runtime.VertxCoreRecorder$14.runWith(VertxCoreRecorder.java:576)
+	at org.jboss.threads.EnhancedQueueExecutor$Task.run(EnhancedQueueExecutor.java:2513)
+	at org.jboss.threads.EnhancedQueueExecutor$ThreadBody.run(EnhancedQueueExecutor.java:1538)
+	at org.jboss.threads.DelegatingRunnable.run(DelegatingRunnable.java:29)
+	at org.jboss.threads.ThreadLocalResettingRunnable.run(ThreadLocalResettingRunnable.java:29)
+	at io.netty.util.concurrent.FastThreadLocalRunnable.run(FastThreadLocalRunnable.java:30)
+	at java.base/java.lang.Thread.run(Thread.java:1623)
+Caused by: java.lang.NumberFormatException: For input string: "undefined"
+	at java.base/java.lang.NumberFormatException.forInputString(NumberFormatException.java:67)
+	at java.base/java.lang.Long.parseLong(Long.java:708)
+	at java.base/java.lang.Long.valueOf(Long.java:1156)
+	at io.quarkus.generated.java.lang.Long$quarkusrestparamConverter$.convert(Unknown Source)
+	at org.jboss.resteasy.reactive.server.handlers.ParameterHandler.handleResult(ParameterHandler.java:108)
+	... 10 more

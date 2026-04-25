@@ -1,0 +1,17 @@
+
+2025-03-09T10:31:39.890534700 No buyer visits found for patientId: 601
+jakarta.ws.rs.WebApplicationException: No buyer visits found for patientId: 601
+	at org.example.visit.services.PatientVisitService.getVisitByPatientId(PatientVisitService.java:143)
+	at org.example.services.PatientVisitService_ClientProxy.getVisitByPatientId(Unknown Source)
+	at org.example.visit.endpoints.PatientVisitController.getPatientVisitListById(PatientVisitController.java:77)
+	at org.example.visit.endpoints.PatientVisitController$quarkusrestinvoker$getPatientVisitListById_7102b22e8f5722004396aed4bbc23603275d6787.invoke(Unknown Source)
+	at org.jboss.resteasy.reactive.server.handlers.InvocationHandler.handle(InvocationHandler.java:29)
+	at io.quarkus.resteasy.reactive.server.runtime.QuarkusResteasyReactiveRequestContext.invokeHandler(QuarkusResteasyReactiveRequestContext.java:141)
+	at org.jboss.resteasy.reactive.common.core.AbstractResteasyReactiveContext.run(AbstractResteasyReactiveContext.java:145)
+	at io.quarkus.vertx.core.runtime.VertxCoreRecorder$14.runWith(VertxCoreRecorder.java:576)
+	at org.jboss.threads.EnhancedQueueExecutor$Task.run(EnhancedQueueExecutor.java:2513)
+	at org.jboss.threads.EnhancedQueueExecutor$ThreadBody.run(EnhancedQueueExecutor.java:1538)
+	at org.jboss.threads.DelegatingRunnable.run(DelegatingRunnable.java:29)
+	at org.jboss.threads.ThreadLocalResettingRunnable.run(ThreadLocalResettingRunnable.java:29)
+	at io.netty.util.concurrent.FastThreadLocalRunnable.run(FastThreadLocalRunnable.java:30)
+	at java.base/java.lang.Thread.run(Thread.java:1623)

@@ -1,0 +1,68 @@
+
+2025-02-08T21:48:25.662087500 No payment found for visit Id: 2
+jakarta.ws.rs.WebApplicationException: No payment found for visit Id: 2
+	at org.example.finance.payments.cash.services.PaymentService.getPaymentsByVisitId(PaymentService.java:123)
+	at org.example.services.PaymentService_ClientProxy.getPaymentsByVisitId(Unknown Source)
+	at org.example.finance.payments.cash.endpoints.PaymentController.getPaymentListByVisitId(PaymentController.java:52)
+	at org.example.finance.payments.cash.endpoints.PaymentController$quarkusrestinvoker$getPaymentListByVisitId_44dd03c33a3a6c4212e8cd331d66acdbf5c26638.invoke(Unknown Source)
+	at org.jboss.resteasy.reactive.server.handlers.InvocationHandler.handle(InvocationHandler.java:29)
+	at io.quarkus.resteasy.reactive.server.runtime.QuarkusResteasyReactiveRequestContext.invokeHandler(QuarkusResteasyReactiveRequestContext.java:141)
+	at org.jboss.resteasy.reactive.common.core.AbstractResteasyReactiveContext.run(AbstractResteasyReactiveContext.java:145)
+	at io.quarkus.vertx.core.runtime.VertxCoreRecorder$14.runWith(VertxCoreRecorder.java:576)
+	at org.jboss.threads.EnhancedQueueExecutor$Task.run(EnhancedQueueExecutor.java:2513)
+	at org.jboss.threads.EnhancedQueueExecutor$ThreadBody.run(EnhancedQueueExecutor.java:1512)
+	at org.jboss.threads.DelegatingRunnable.run(DelegatingRunnable.java:29)
+	at org.jboss.threads.ThreadLocalResettingRunnable.run(ThreadLocalResettingRunnable.java:29)
+	at io.netty.util.concurrent.FastThreadLocalRunnable.run(FastThreadLocalRunnable.java:30)
+	at java.base/java.lang.Thread.run(Thread.java:1623)
+
+2025-02-08T22:02:51.286214900 No payment found for visit Id: 2
+jakarta.ws.rs.WebApplicationException: No payment found for visit Id: 2
+	at org.example.finance.payments.cash.services.PaymentService.getPaymentsByVisitId(PaymentService.java:123)
+	at org.example.services.PaymentService_ClientProxy.getPaymentsByVisitId(Unknown Source)
+	at org.example.finance.payments.cash.endpoints.PaymentController.getPaymentListByVisitId(PaymentController.java:52)
+	at org.example.finance.payments.cash.endpoints.PaymentController$quarkusrestinvoker$getPaymentListByVisitId_44dd03c33a3a6c4212e8cd331d66acdbf5c26638.invoke(Unknown Source)
+	at org.jboss.resteasy.reactive.server.handlers.InvocationHandler.handle(InvocationHandler.java:29)
+	at io.quarkus.resteasy.reactive.server.runtime.QuarkusResteasyReactiveRequestContext.invokeHandler(QuarkusResteasyReactiveRequestContext.java:141)
+	at org.jboss.resteasy.reactive.common.core.AbstractResteasyReactiveContext.run(AbstractResteasyReactiveContext.java:145)
+	at io.quarkus.vertx.core.runtime.VertxCoreRecorder$14.runWith(VertxCoreRecorder.java:576)
+	at org.jboss.threads.EnhancedQueueExecutor$Task.run(EnhancedQueueExecutor.java:2513)
+	at org.jboss.threads.EnhancedQueueExecutor$ThreadBody.run(EnhancedQueueExecutor.java:1538)
+	at org.jboss.threads.DelegatingRunnable.run(DelegatingRunnable.java:29)
+	at org.jboss.threads.ThreadLocalResettingRunnable.run(ThreadLocalResettingRunnable.java:29)
+	at io.netty.util.concurrent.FastThreadLocalRunnable.run(FastThreadLocalRunnable.java:30)
+	at java.base/java.lang.Thread.run(Thread.java:1623)
+
+2025-02-08T22:03:04.824348200 No payment found for visit Id: 2
+jakarta.ws.rs.WebApplicationException: No payment found for visit Id: 2
+	at org.example.finance.payments.cash.services.PaymentService.getPaymentsByVisitId(PaymentService.java:123)
+	at org.example.services.PaymentService_ClientProxy.getPaymentsByVisitId(Unknown Source)
+	at org.example.finance.payments.cash.endpoints.PaymentController.getPaymentListByVisitId(PaymentController.java:52)
+	at org.example.finance.payments.cash.endpoints.PaymentController$quarkusrestinvoker$getPaymentListByVisitId_44dd03c33a3a6c4212e8cd331d66acdbf5c26638.invoke(Unknown Source)
+	at org.jboss.resteasy.reactive.server.handlers.InvocationHandler.handle(InvocationHandler.java:29)
+	at io.quarkus.resteasy.reactive.server.runtime.QuarkusResteasyReactiveRequestContext.invokeHandler(QuarkusResteasyReactiveRequestContext.java:141)
+	at org.jboss.resteasy.reactive.common.core.AbstractResteasyReactiveContext.run(AbstractResteasyReactiveContext.java:145)
+	at io.quarkus.vertx.core.runtime.VertxCoreRecorder$14.runWith(VertxCoreRecorder.java:576)
+	at org.jboss.threads.EnhancedQueueExecutor$Task.run(EnhancedQueueExecutor.java:2513)
+	at org.jboss.threads.EnhancedQueueExecutor$ThreadBody.run(EnhancedQueueExecutor.java:1512)
+	at org.jboss.threads.DelegatingRunnable.run(DelegatingRunnable.java:29)
+	at org.jboss.threads.ThreadLocalResettingRunnable.run(ThreadLocalResettingRunnable.java:29)
+	at io.netty.util.concurrent.FastThreadLocalRunnable.run(FastThreadLocalRunnable.java:30)
+	at java.base/java.lang.Thread.run(Thread.java:1623)
+
+2025-02-08T22:03:20.174074400 No payment found for visit Id: 51
+jakarta.ws.rs.WebApplicationException: No payment found for visit Id: 51
+	at org.example.finance.payments.cash.services.PaymentService.getPaymentsByVisitId(PaymentService.java:123)
+	at org.example.services.PaymentService_ClientProxy.getPaymentsByVisitId(Unknown Source)
+	at org.example.finance.payments.cash.endpoints.PaymentController.getPaymentListByVisitId(PaymentController.java:52)
+	at org.example.finance.payments.cash.endpoints.PaymentController$quarkusrestinvoker$getPaymentListByVisitId_44dd03c33a3a6c4212e8cd331d66acdbf5c26638.invoke(Unknown Source)
+	at org.jboss.resteasy.reactive.server.handlers.InvocationHandler.handle(InvocationHandler.java:29)
+	at io.quarkus.resteasy.reactive.server.runtime.QuarkusResteasyReactiveRequestContext.invokeHandler(QuarkusResteasyReactiveRequestContext.java:141)
+	at org.jboss.resteasy.reactive.common.core.AbstractResteasyReactiveContext.run(AbstractResteasyReactiveContext.java:145)
+	at io.quarkus.vertx.core.runtime.VertxCoreRecorder$14.runWith(VertxCoreRecorder.java:576)
+	at org.jboss.threads.EnhancedQueueExecutor$Task.run(EnhancedQueueExecutor.java:2513)
+	at org.jboss.threads.EnhancedQueueExecutor$ThreadBody.run(EnhancedQueueExecutor.java:1538)
+	at org.jboss.threads.DelegatingRunnable.run(DelegatingRunnable.java:29)
+	at org.jboss.threads.ThreadLocalResettingRunnable.run(ThreadLocalResettingRunnable.java:29)
+	at io.netty.util.concurrent.FastThreadLocalRunnable.run(FastThreadLocalRunnable.java:30)
+	at java.base/java.lang.Thread.run(Thread.java:1623)
