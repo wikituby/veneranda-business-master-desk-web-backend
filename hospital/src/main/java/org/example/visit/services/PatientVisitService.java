@@ -344,7 +344,7 @@ public class PatientVisitService {
 
         if (latestVisit == null) {
             PatientVisitRequest defaultRequest = new PatientVisitRequest();
-            defaultRequest.visitType = "General Consultation";
+            defaultRequest.visitType = "";
 
 
             // Create a new visit

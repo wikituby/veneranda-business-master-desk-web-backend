@@ -46,6 +46,7 @@ public class CustomAwareJWTAuthMechanism implements HttpAuthenticationMechanism,
     private static final List<String> allowedOrigins = List.of(
             "http://162.212.157.6",
             "http://192.168.1.114",
+            "http://192.168.1.141",
             "http://192.168.1.100",
             "http://192.168.1.101",
             "http://localhost:61403",

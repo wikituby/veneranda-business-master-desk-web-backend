@@ -309,7 +309,7 @@ public class GeneralUsService {
             String patientName = generalUs.patientName != null ? generalUs.patientName.toUpperCase() : "N/A";
             String nextOfKeen = patient.nextOfKinName != null ? patient.nextOfKinName.toUpperCase() : "N/A";
 
-            String exam = generalUs.exam != null ? generalUs.exam.toUpperCase() : "N/A";
+            String exam = procedureRequestedScan.procedureRequestedName != null ? procedureRequestedScan.procedureRequestedName.toUpperCase() : "N/A";
             String gender = patient.patientGender != null ? patient.patientGender.toUpperCase() : "N/A";
             
             headerTable.addCell(new Cell()
