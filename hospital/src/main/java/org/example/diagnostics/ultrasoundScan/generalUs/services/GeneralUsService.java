@@ -421,7 +421,7 @@ public class GeneralUsService {
             initialsTable.addCell(new Cell()
                     .setBorder(Border.NO_BORDER)
                     .setPadding(5)
-                    .add(new Paragraph("Imaging Technologist / Sonographer / Radiographer:")
+                    .add(new Paragraph("Imaging Technologist/Sonographer / Radiographer:")
                             .setUnderline()
                             .setBold()
                             .setFontSize(10))
