@@ -434,7 +434,7 @@ public class GeneralUsService {
             initialsTable.addCell(new Cell()
                     .setBorder(Border.NO_BORDER)
                     .setPadding(5)
-                    .add(new Paragraph("Signature/Stamp")
+                    .add(new Paragraph("Signature / Stamp")
                             .setUnderline()
                             .setBold()
                             .setFontSize(10))
