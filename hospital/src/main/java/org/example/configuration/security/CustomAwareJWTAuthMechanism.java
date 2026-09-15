@@ -122,6 +122,8 @@ public class CustomAwareJWTAuthMechanism implements HttpAuthenticationMechanism,
                 request.path().contains("/health_care/Patient-management/update-complaint-site/") ||
                 request.path().contains("/health_care/Patient-management/delete-complaint-site/") ||
                 request.path().contains("/health_care/health") ||
+                request.path().contains("/support/website-contact/public") ||
+                request.path().contains("/health_care/support/website-contact/public") ||
                 request.path().contains("/health_care/diagnostics-management/get-all-generalUs") ||
                 request.path().contains("/health_care/diagnostics-management/update-general-lab-report/") ||
                 request.path().contains("/health_care/diagnostics-management/get-general-lab-report-by-request-id/") ||
