@@ -12,11 +12,18 @@ import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.example.configuration.handler.ActionMessages;
 import org.example.configuration.handler.ResponseMessage;
+import org.example.inventory.stock.services.StockDosageRuleService;
 import org.example.inventory.stock.services.StockItemService;
+import org.example.inventory.stock.services.UnitSellingModelService;
+import org.example.inventory.stock.services.payloads.requests.StockDosageRuleRequest;
 import org.example.inventory.stock.services.payloads.requests.StockItemRequest;
+import org.example.inventory.stock.services.payloads.requests.UnitSellingModelRequest;
 import org.example.inventory.stock.services.payloads.responses.basicResponses.StockItemResponse;
+import org.example.inventory.stock.services.payloads.responses.dtos.StockDosageRuleDTO;
 import org.example.inventory.stock.services.payloads.responses.dtos.StockItemDTO;
+import org.example.inventory.stock.services.payloads.responses.dtos.UnitSellingModelDTO;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Path("/stock-item")
@@ -27,6 +34,12 @@ public class StockItemController {
 
     @Inject
     StockItemService stockItemService;
+
+    @Inject
+    StockDosageRuleService stockDosageRuleService;
+
+    @Inject
+    UnitSellingModelService unitSellingModelService;
 
     @POST
     @Path("/create-or-update-stock-item")
@@ -118,5 +131,93 @@ public class StockItemController {
     )
     public Response updateMissingNamesAndTitles() {
         return stockItemService.updateMissingNamesAndTitles();
+    }
+
+    @POST
+    @Path("/{stockItemId}/dosage-rules")
+    @Transactional
+    @Operation(summary = "Create Dosage Rule", description = "Creates a standard dosage rule linked to a stock item/drug.")
+    @APIResponse(description = "Dosage rule created successfully.", responseCode = "200", content = @Content(schema = @Schema(implementation = StockDosageRuleDTO.class)))
+    public Response createDosageRule(@PathParam("stockItemId") Long stockItemId, StockDosageRuleRequest request) {
+        return stockDosageRuleService.createDosageRule(stockItemId, request);
+    }
+
+    @GET
+    @Path("/{stockItemId}/dosage-rules")
+    @Transactional
+    @Operation(summary = "List Dosage Rules", description = "Lists dosage rules linked to a stock item/drug.")
+    @APIResponse(description = "Dosage rules fetched successfully.", responseCode = "200", content = @Content(schema = @Schema(implementation = StockDosageRuleDTO.class)))
+    public Response getDosageRulesByStockItem(
+            @PathParam("stockItemId") Long stockItemId,
+            @QueryParam("activeOnly") @DefaultValue("true") boolean activeOnly
+    ) {
+        var rules = activeOnly
+                ? stockDosageRuleService.getActiveDosageRulesByStockItem(stockItemId)
+                : stockDosageRuleService.getDosageRulesByStockItem(stockItemId);
+        return Response.ok(new ResponseMessage(ActionMessages.FETCHED.label, rules)).build();
+    }
+
+    @PUT
+    @Path("/dosage-rules/{ruleId}")
+    @Transactional
+    @Operation(summary = "Update Dosage Rule", description = "Updates an existing dosage rule.")
+    @APIResponse(description = "Dosage rule updated successfully.", responseCode = "200", content = @Content(schema = @Schema(implementation = StockDosageRuleDTO.class)))
+    public Response updateDosageRule(@PathParam("ruleId") Long ruleId, StockDosageRuleRequest request) {
+        return stockDosageRuleService.updateDosageRule(ruleId, request);
+    }
+
+    @DELETE
+    @Path("/dosage-rules/{ruleId}")
+    @Transactional
+    @Operation(summary = "Delete Dosage Rule", description = "Deletes a dosage rule.")
+    @APIResponse(description = "Dosage rule deleted successfully.", responseCode = "200")
+    public Response deleteDosageRule(@PathParam("ruleId") Long ruleId) {
+        return stockDosageRuleService.deleteDosageRule(ruleId);
+    }
+
+    @POST
+    @Path("/{stockItemId}/unit-selling-models")
+    @Transactional
+    @Operation(summary = "Create Unit Selling Model", description = "Creates a unit selling model linked to a stock item.")
+    @APIResponse(description = "Unit selling model created successfully.", responseCode = "200", content = @Content(schema = @Schema(implementation = UnitSellingModelDTO.class)))
+    public Response createUnitSellingModel(
+            @PathParam("stockItemId") Long stockItemId,
+            UnitSellingModelRequest request
+    ) {
+        return unitSellingModelService.createModel(stockItemId, request);
+    }
+
+    @GET
+    @Path("/{stockItemId}/unit-selling-models")
+    @Transactional
+    @Operation(summary = "List Unit Selling Models", description = "Lists unit selling models linked to a stock item.")
+    @APIResponse(description = "Unit selling models fetched successfully.", responseCode = "200", content = @Content(schema = @Schema(implementation = UnitSellingModelDTO.class)))
+    public Response getUnitSellingModelsByStockItem(
+            @PathParam("stockItemId") Long stockItemId,
+            @QueryParam("unitCostPrice") BigDecimal unitCostPrice
+    ) {
+        var models = unitSellingModelService.listByStockItem(stockItemId, unitCostPrice);
+        return Response.ok(new ResponseMessage(ActionMessages.FETCHED.label, models)).build();
+    }
+
+    @PUT
+    @Path("/unit-selling-models/{modelId}")
+    @Transactional
+    @Operation(summary = "Update Unit Selling Model", description = "Updates an existing unit selling model.")
+    @APIResponse(description = "Unit selling model updated successfully.", responseCode = "200", content = @Content(schema = @Schema(implementation = UnitSellingModelDTO.class)))
+    public Response updateUnitSellingModel(
+            @PathParam("modelId") Long modelId,
+            UnitSellingModelRequest request
+    ) {
+        return unitSellingModelService.updateModel(modelId, request);
+    }
+
+    @DELETE
+    @Path("/unit-selling-models/{modelId}")
+    @Transactional
+    @Operation(summary = "Delete Unit Selling Model", description = "Deletes a unit selling model.")
+    @APIResponse(description = "Unit selling model deleted successfully.", responseCode = "200")
+    public Response deleteUnitSellingModel(@PathParam("modelId") Long modelId) {
+        return unitSellingModelService.deleteModel(modelId);
     }
 }

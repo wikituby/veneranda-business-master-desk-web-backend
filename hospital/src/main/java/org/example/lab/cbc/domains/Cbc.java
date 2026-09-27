@@ -3,10 +3,13 @@ package org.example.lab.cbc.domains;
 import io.quarkus.hibernate.orm.panache.PanacheEntity;
 import jakarta.json.bind.annotation.JsonbDateFormat;
 import jakarta.persistence.Column;
+import jakarta.persistence.ConstraintMode;
 import jakarta.persistence.Entity;
+import jakarta.persistence.ForeignKey;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
+import jakarta.persistence.Table;
 import org.example.procedure.procedureRequested.domains.ProcedureRequested;
 import org.example.visit.domains.PatientVisit;
 import org.hibernate.annotations.DynamicUpdate;
@@ -16,15 +19,29 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity(name = "LabCbcReport")
+@Table(name = "LabCbcReport")
 @DynamicUpdate
 public class Cbc extends PanacheEntity {
 
+    /**
+     * Physical FKs exist in MySQL ({@code FK_lab_cbc_report_visit}). Hibernate schema
+     * {@code update} on MySQL often fails to detect them and retries {@code ALTER ... ADD},
+     * so DDL is disabled here while keeping the DB constraints.
+     */
     @ManyToOne
-    @JoinColumn(name = "visit_id", nullable = false)
+    @JoinColumn(
+            name = "visit_id",
+            nullable = false,
+            foreignKey = @ForeignKey(name = "FK_lab_cbc_report_visit", value = ConstraintMode.NO_CONSTRAINT))
     public PatientVisit visit;
 
     @OneToOne
-    @JoinColumn(name = "procedureRequested_id", nullable = false)
+    @JoinColumn(
+            name = "procedureRequested_id",
+            nullable = false,
+            foreignKey = @ForeignKey(
+                    name = "FK_lab_cbc_report_procedure_requested",
+                    value = ConstraintMode.NO_CONSTRAINT))
     public ProcedureRequested procedureRequested;
 
     @Column

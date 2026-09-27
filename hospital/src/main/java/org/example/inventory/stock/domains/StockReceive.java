@@ -62,5 +62,11 @@ public class StockReceive extends PanacheEntity {
     public String batchNumber;
 
     @Column
+    public Long purchaseOrderId;
+
+    @Column
+    public String purchaseOrderNo;
+
+    @Column
     public String packaging;
 }

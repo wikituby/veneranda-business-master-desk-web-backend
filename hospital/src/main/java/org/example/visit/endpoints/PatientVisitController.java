@@ -13,6 +13,7 @@ import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.eclipse.microprofile.openapi.annotations.Operation;
@@ -35,10 +36,10 @@ import org.example.visit.services.paloads.responses.PatientVisitDTO;
 
 import java.util.List;
 
-@Path("Patient-management")
+@Path("Client-management")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-@Tag(name = "Patient Management Module", description = "Patient Management")
+@Tag(name = "Client Management Module", description = "Client Management")
 
 public class PatientVisitController {
 
@@ -96,6 +97,16 @@ public class PatientVisitController {
         return Response.ok(new ResponseMessage(ActionMessages.UPDATED.label,patientVisitService.updatePatientVisitStatusById(id, request) )).build();
     }
 
+    @DELETE
+    @Path("delete-patient-visit/{id}")
+    @Transactional
+    @Operation(summary = "Delete patient visit", description = "Delete patient visit (admin only)")
+    public Response deletePatientVisit(
+            @PathParam("id") Long id,
+            @QueryParam("userRole") String userRole) {
+        return patientVisitService.deletePatientVisitById(id, userRole);
+    }
+
     @GET
     @Path("get-patient-Visit-List-by-id/{id}")
     @Operation(summary = "Get patientVisitList where patient id", description = "Get patientVisitList where patient id")
@@ -106,6 +117,18 @@ public class PatientVisitController {
 
         // Return a successful response with the list of DTOs
         return Response.ok(new ResponseMessage(ActionMessages.FETCHED.label, patientVisitList)).build();
+    }
+
+    @GET
+    @Path("get-patient-visit-summaries-by-id/{id}")
+    @Transactional
+    @Operation(
+            summary = "Get light patient visit / order list by patient id",
+            description = "Lightweight rows for order pickers (no nested vitals/invoices/consultations).")
+    @APIResponse(description = "Successful", responseCode = "200", content = @Content(schema = @Schema(implementation = PatientVisitDTO.class)))
+    public Response getPatientVisitSummariesById(@PathParam("id") Long patientId) {
+        List<PatientVisitDTO> rows = patientVisitService.getVisitSummariesByPatientId(patientId);
+        return Response.ok(new ResponseMessage(ActionMessages.FETCHED.label, rows)).build();
     }
 
     @GET
@@ -145,7 +168,8 @@ public class PatientVisitController {
     @Path("/filter-visits")
     @Operation(
             summary = "Filter visits by date, patient name, diagnosis, procedure",
-            description = "Query params: visitGroup, datefrom, dateto, patientName, diagnosis, procedureId (optional). "
+            description = "Query params: patientGroupId (preferred), visitGroup, datefrom, dateto, patientName, diagnosis, procedureId (optional). "
+                    + "Patient group filter matches the linked patient's registry group (patient.patientGroup), not visit.visitGroup. "
                     + "String filters are case-insensitive partial matches. Omit procedureId for all services.")
     @APIResponse(description = "Successful", responseCode = "200", content = @Content(schema = @Schema(implementation = PatientVisitDTO.class)))
     public Response filterVisitsByClinicalCriteria(@BeanParam VisitParametersRequest request) {
@@ -174,6 +198,15 @@ public class PatientVisitController {
     @APIResponse(description = "Successful", responseCode = "200", content = @Content(schema = @Schema(implementation = Response.class)))
     public Response generateAndReturnInvoiceForCompassionPdfTrue(@BeanParam VisitParametersRequest request) {
         return patientVisitService.generateAndReturnInvoicePdfForListOfCompassionPatients(request);
+    }
+
+    @GET
+    @Transactional
+    @Path("group/invoice-period/generate-docx")
+    @Operation(summary = "Compassion-style group invoice Word export", description = "Downloads a Word invoice matching the compassion invoice template for filtered visits.")
+    @APIResponse(description = "Successful", responseCode = "200", content = @Content(schema = @Schema(implementation = Response.class)))
+    public Response generateAndReturnCompassionGroupInvoiceDocx(@BeanParam VisitParametersRequest request) {
+        return patientVisitService.generateAndReturnCompassionGroupInvoiceDocx(request);
     }
 
 

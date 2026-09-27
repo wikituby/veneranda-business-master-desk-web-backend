@@ -8,8 +8,10 @@ import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;
 import org.example.configuration.handler.ResponseMessage;
 import org.example.inventory.item.domain.repositories.ItemRepository;
+import org.example.procedure.itemUsedInProcedure.domains.ItemUsed;
 import org.example.procedure.procedure.domains.Procedure;
 import org.example.procedure.procedure.domains.ProcedureCategory;
+import org.example.procedure.procedure.domains.ProcedureUnitSellingModel;
 import org.example.procedure.procedure.domains.repositories.ProcedureCategoryRepository;
 import org.example.procedure.procedure.domains.repositories.ProcedureRepository;
 
@@ -34,6 +36,9 @@ public class ProcedureService {
     @Inject
     ItemRepository itemRepository;
 
+    @Inject
+    ProcedureUnitSellingModelService procedureUnitSellingModelService;
+
     public static final String NOT_FOUND = "Lab test not found!";
     public static final String INVALID_REQUEST = "Invalid request data!";
 
@@ -52,9 +57,6 @@ public class ProcedureService {
         ProcedureCategory category =
                 procedureCategoryRepository.findById(request.categoryId);
 
-        ProcedureCategory parentCategory =
-                procedureCategoryRepository.findById(request.parentCategoryId);
-
         if (category == null) {
             return Response.status(Response.Status.NOT_FOUND)
                     .entity(new ResponseMessage(
@@ -62,12 +64,18 @@ public class ProcedureService {
                     .build();
         }
 
-        if (parentCategory == null) {
+        ProcedureCategory parentCategory = null;
+        if (request.parentCategoryId != null) {
+            parentCategory = procedureCategoryRepository.findById(request.parentCategoryId);
+            if (parentCategory == null) {
                 return Response.status(Response.Status.NOT_FOUND)
                         .entity(new ResponseMessage(
-                                "parentCategory not found for ID: " + request.parentCategoryId))
+                                "Parent category not found for ID: " + request.parentCategoryId))
                         .build();
             }
+        } else if (category.parent != null) {
+            parentCategory = category.parent;
+        }
 
         boolean exists = Procedure.find(
                 "lower(procedureName) = ?1 and category.id = ?2",
@@ -87,10 +95,39 @@ public class ProcedureService {
         procedure.category = category;
         procedure.parentCategory = parentCategory;
         procedure.description = request.description;
-        procedure.unitSellingPrice = request.unitSellingPrice;
         procedure.unitCostPrice = request.unitCostPrice;
+        procedure.unitSellingPrice = procedureUnitSellingModelService.resolveUnitSellingPrice(
+                null,
+                request.unitSellingModelId,
+                request.unitSellingPrice
+        );
 
         procedureRepository.persist(procedure);
+
+        if (request.initialUnitSellingModel != null) {
+            ProcedureUnitSellingModel model = procedureUnitSellingModelService.createModelEntity(
+                    procedure.id,
+                    request.initialUnitSellingModel
+            );
+            if (model != null) {
+                procedure.unitSellingModelId = model.id;
+                procedure.unitSellingPrice = model.unitSellingPrice;
+            }
+        } else if (request.unitSellingModelId != null) {
+            procedure.unitSellingModelId = request.unitSellingModelId;
+            procedure.unitSellingPrice = procedureUnitSellingModelService.resolveUnitSellingPrice(
+                    procedure.id,
+                    request.unitSellingModelId,
+                    procedure.unitSellingPrice
+            );
+        } else {
+            procedureUnitSellingModelService.ensureModelsForProcedure(procedure.id, procedure.unitCostPrice);
+            Procedure refreshed = procedureRepository.findById(procedure.id);
+            if (refreshed != null) {
+                procedure.unitSellingModelId = refreshed.unitSellingModelId;
+                procedure.unitSellingPrice = refreshed.unitSellingPrice;
+            }
+        }
 
         return Response.ok(
                 new ResponseMessage(
@@ -276,23 +313,32 @@ public class ProcedureService {
         // Update category if provided
         if (request.categoryId != null) {
             procedure.category = finalCategory;
+            if (request.parentCategoryId != null) {
+                procedure.parentCategory = finalParentCategory;
+            } else {
+                procedure.parentCategory = finalCategory.parent;
+            }
+        } else if (request.parentCategoryId != null) {
+            procedure.parentCategory = finalParentCategory;
         }
-
-                // Update category if provided
-         if (request.parentCategoryId != null) {
-                        procedure.parentCategory = finalParentCategory;
-                    }
 
         if (request.description != null) {
             procedure.description = request.description;
         }
 
-        if (request.unitSellingPrice != null) {
-            procedure.unitSellingPrice = request.unitSellingPrice;
-        }
-
         if (request.unitCostPrice != null) {
             procedure.unitCostPrice = request.unitCostPrice;
+        }
+
+        if (request.unitSellingModelId != null) {
+            procedure.unitSellingModelId = request.unitSellingModelId;
+            procedure.unitSellingPrice = procedureUnitSellingModelService.resolveUnitSellingPrice(
+                    procedure.id,
+                    request.unitSellingModelId,
+                    request.unitSellingPrice != null ? request.unitSellingPrice : procedure.unitSellingPrice
+            );
+        } else if (request.unitSellingPrice != null) {
+            procedure.unitSellingPrice = request.unitSellingPrice;
         }
 
         // ❌ persist() REMOVED — entity already managed
@@ -372,15 +418,26 @@ public class ProcedureService {
        ========================================================= */
     @Transactional
     public Response deleteServiceById(Long id) {
-
-        Procedure service = procedureRepository.findById(id);
-        if (service == null) {
+        if (procedureRepository.findById(id) == null) {
             return Response.status(Response.Status.NOT_FOUND)
                     .entity(new ResponseMessage("service not found", null))
                     .build();
         }
 
-        procedureRepository.delete(service);
+        // Remove dependent rows and break JPA links without loading visit graphs
+        // (PatientVisit cascades to ProcedureRequested and can trigger TransientObjectException on flush).
+        ProcedureUnitSellingModel.delete("procedure.id", id);
+        ItemUsed.delete("procedureId", id);
+        procedureRepository.getEntityManager()
+                .createQuery("UPDATE ProcedureRequested pr SET pr.procedure = null WHERE pr.procedure.id = :procedureId")
+                .setParameter("procedureId", id)
+                .executeUpdate();
+
+        var entityManager = procedureRepository.getEntityManager();
+        entityManager.flush();
+        entityManager.clear();
+
+        procedureRepository.deleteById(id);
         return Response.ok(
                 new ResponseMessage("Service Deleted successfully"))
                 .build();

@@ -16,7 +16,7 @@ import org.example.inventory.item.services.ManufacturerService;
 import org.example.inventory.item.services.payloads.requests.ManufacturerRequest;
 import org.example.inventory.item.services.payloads.responses.dtos.ManufacturerDTO;
 
-@Path("/Hospital-item")
+@Path("/Business-item")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 @Tag(name = "Hospital Management Module", description = "Manage hospital manufacturers")

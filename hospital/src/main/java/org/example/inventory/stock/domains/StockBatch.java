@@ -41,7 +41,17 @@ public class StockBatch extends PanacheEntity {
 
         // updated field by the stock batch service
     @Column
-    public BigDecimal profitMargin;
+    public BigDecimal profitMarginForRetail;
+
+    @Column
+    public BigDecimal profitMarginForWholeSale;
+
+    @Column
+    public BigDecimal profitMarginForSpecialCase;
+
+    /** Selected default unit selling model for this batch (catalog lives on stock item). */
+    @Column
+    public Long unitSellingModelId;
 
     @Column
     public Integer reOrderLevel;

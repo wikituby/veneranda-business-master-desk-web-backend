@@ -22,10 +22,10 @@ import org.example.visit.services.paloads.responses.PatientVisitDTO;
 import java.util.List;
 
 
-@Path("Patient-management")
+@Path("Client-management")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-@Tag(name = "Patient Management Module", description = "Patient Management")
+@Tag(name = "Client Management Module", description = "Client Management")
 
 public class PaymentController {
 
@@ -40,6 +40,15 @@ public class PaymentController {
     @APIResponse(description = "Successful", responseCode = "200", content = @Content(schema = @Schema(implementation = PaymentDTO.class)))
     public Response createNewPayment(@PathParam("id") Long visitId, PaymentRequest request) {
         return paymentsService.createNewPayment(visitId,request);
+    }
+
+    @POST
+    @Path("pay-all-patient-debt/{patientId}")
+    @Transactional
+    @Operation(summary = "Pay all patient debt", description = "Apply a lump-sum payment across patient visits, oldest first")
+    @APIResponse(description = "Successful", responseCode = "200", content = @Content(schema = @Schema(implementation = PaymentDTO.class)))
+    public Response payAllPatientDebt(@PathParam("patientId") Long patientId, PaymentRequest request) {
+        return paymentsService.payAllPatientDebt(patientId, request);
     }
 
     @GET
@@ -62,6 +71,15 @@ public class PaymentController {
     @APIResponse(description = "Successful", responseCode = "200")
     public Response deletePaymentById(@PathParam("id") Long id){
         return paymentsService.deletePayment(id);
+    }
+
+    @PUT
+    @Path("/update-payment-id/{id}")
+    @Transactional
+    @Operation(summary = "update payment by id", description = "Update or reverse a payment by id")
+    @APIResponse(description = "Successful", responseCode = "200", content = @Content(schema = @Schema(implementation = PaymentDTO.class)))
+    public Response updatePaymentById(@PathParam("id") Long id, PaymentRequest request) {
+        return paymentsService.updatePayment(id, request);
     }
 
 

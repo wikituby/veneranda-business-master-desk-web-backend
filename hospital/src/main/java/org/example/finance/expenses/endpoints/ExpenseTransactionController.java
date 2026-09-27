@@ -32,7 +32,6 @@ public class ExpenseTransactionController {
 
     @POST
     @Path("create-new-expense-transaction")
-    @Transactional
     @Operation(summary = "new expense transaction", description = "new expense transaction")
     @APIResponse(description = "Successful", responseCode = "200", content = @Content(schema = @Schema(implementation = ExpenseTransactionDto.class)))
     public Response createNewExpenseTransaction(ExpenseTransactionRequest request){
@@ -58,6 +57,15 @@ public class ExpenseTransactionController {
     public Response deleteExpenseTransactionById(@PathParam("id") Long id){
         return expenseTransactionService.deleteExpenseTransactionById(id);
 
+    }
+
+    @PUT
+    @Path("update-expense-transaction/{id}")
+    @Transactional
+    @Operation(summary = "update expense transaction by id", description = "update expense Transaction by id.")
+    @APIResponse(description = "Successful", responseCode = "200", content = @Content(schema = @Schema(implementation = ExpenseTransactionDto.class)))
+    public Response updateExpenseTransactionById(@PathParam("id") Long id, ExpenseTransactionRequest request){
+        return expenseTransactionService.updateExpenseTransactionById(id, request);
     }
 }
 

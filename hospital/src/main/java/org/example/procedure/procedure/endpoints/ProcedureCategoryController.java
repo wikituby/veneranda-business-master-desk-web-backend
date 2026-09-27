@@ -25,10 +25,10 @@ import org.example.procedure.procedure.services.payloads.requests.ProcedureCateg
 import org.example.procedure.procedure.services.payloads.responses.basicResponses.ProcedureCategoryResponse;
 import org.example.procedure.procedure.services.payloads.responses.dtos.ProcedureCategoryDTO;
 
-@Path("Patient-management")
+@Path("Client-management")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-@Tag(name = "Patient Management Module - Procedure Categories", description = "Patient Management")
+@Tag(name = "Client Management Module - Procedure Categories", description = "Client Management")
 
 public class ProcedureCategoryController {
 

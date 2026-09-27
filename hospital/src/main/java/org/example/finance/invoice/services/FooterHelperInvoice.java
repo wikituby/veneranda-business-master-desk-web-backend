@@ -12,8 +12,24 @@ import com.itextpdf.layout.Canvas;
 import com.itextpdf.layout.element.Div;
 import com.itextpdf.layout.element.Paragraph;
 import com.itextpdf.layout.property.TextAlignment;
+import org.example.subscription.services.FacilityBranding;
 
 public class FooterHelperInvoice implements IEventHandler {
+
+    private final FacilityBranding branding;
+
+    public FooterHelperInvoice(FacilityBranding branding) {
+        this.branding = branding != null ? branding : emptyBranding();
+    }
+
+    private static FacilityBranding emptyBranding() {
+        return new FacilityBranding(
+                "Health Facility", null, "", "", "", "", "",
+                null, null, null,
+                "", "", "",
+                "", ""
+        );
+    }
 
     @Override
     public void handleEvent(Event event) {
@@ -22,60 +38,53 @@ public class FooterHelperInvoice implements IEventHandler {
         PdfPage page = docEvent.getPage();
         Rectangle pageSize = page.getPageSize();
 
-        // Create canvas for footer (using newContentStreamAfter() to ensure it's on top)
         PdfCanvas pdfCanvas = new PdfCanvas(page.newContentStreamAfter(), page.getResources(), pdfDoc);
 
         try (Canvas canvas = new Canvas(pdfCanvas, pdfDoc, pageSize)) {
-            // Footer container with background (optional)
             Div footerContainer = new Div()
-                    .setWidth(pageSize.getWidth() - 72) // Account for margins
+                    .setWidth(pageSize.getWidth() - 72)
                     .setFixedPosition(
-                            pageSize.getLeft() + 36,  // Left margin
-                            54,                       // Increased bottom margin (54 points = 0.75 inch)
-                            pageSize.getWidth() - 72   // Width accounting for margins
+                            pageSize.getLeft() + 36,
+                            54,
+                            pageSize.getWidth() - 72
                     );
 
-            // Main footer text
             Paragraph mainFooter = new Paragraph()
-                    .add("- Department of Finance - Veneranda Medical (A subsidiary of Veneranda Hospital) - System Generated -\n EQUITY BANK UG LTD: [ UGX ACC. NO: 1044203473402] [USD ACC.NO: 1044203473403]")
+                    .add(branding.invoiceFooterMainLine())
                     .setFontSize(8)
                     .setMarginBottom(3)
                     .setTextAlignment(TextAlignment.CENTER);
 
-            // Contact information
-            Paragraph contactInfo = new Paragraph()
-                    .add("Bugogo Village, Kyegegwa | Tel: +256 784 411 848 | Email: venerandahospital@gmail.com")
-                    .setFontSize(7)
-                    .setMarginBottom(4)
-                    .setTextAlignment(TextAlignment.CENTER);
+            String contact = branding.invoiceFooterContactResolved();
+            Paragraph contactInfo = null;
+            if (contact != null && !contact.isBlank()) {
+                contactInfo = new Paragraph()
+                        .add(contact)
+                        .setFontSize(7)
+                        .setMarginBottom(4)
+                        .setTextAlignment(TextAlignment.CENTER);
+            }
 
-            // Thank you message
             Paragraph thankYou = new Paragraph()
-                    .add("Thank you for choosing Veneranda Hospital!")
+                    .add(branding.thankYouLine())
                     .setFontSize(6)
                     .setItalic()
                     .setTextAlignment(TextAlignment.CENTER);
 
-            // Add all elements to footer container
             footerContainer.add(mainFooter);
-            footerContainer.add(contactInfo);
+            if (contactInfo != null) {
+                footerContainer.add(contactInfo);
+            }
             footerContainer.add(thankYou);
 
-            // Add footer container to canvas
             canvas.add(footerContainer);
 
-            // Optional: Add a separator line above footer (position adjusted higher)
             pdfCanvas.setStrokeColor(ColorConstants.BLACK)
                     .setLineWidth(0.5f)
-                    .moveTo(pageSize.getLeft() + 36, 72)  // 72 points from bottom (1 inch)
-                    .lineTo(pageSize.getRight() - 36, 72)  // 72 points from bottom (1 inch)
+                    .moveTo(pageSize.getLeft() + 36, 72)
+                    .lineTo(pageSize.getRight() - 36, 72)
                     .stroke();
         }
         pdfCanvas.release();
     }
 }
-
-
-
-
-

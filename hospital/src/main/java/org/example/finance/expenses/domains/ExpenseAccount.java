@@ -7,6 +7,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
 
@@ -23,8 +24,14 @@ public class ExpenseAccount extends PanacheEntity {
     @Column(nullable = false)
     public String expenseCategoryName;
 
-    @Column(columnDefinition = "TEXT") // Assuming this may be a longer text
+    @Column(columnDefinition = "TEXT")
     public String description;
+
+    @Column
+    public BigDecimal accountLimit;
+
+    @Column
+    public String limitPeriod;
 
     @Column
     @JsonbDateFormat(value = "yyyy/MM/dd")
@@ -36,8 +43,6 @@ public class ExpenseAccount extends PanacheEntity {
 
     @Column
     public LocalTime timeOfAccountCreation;
-
-
 }
 
 

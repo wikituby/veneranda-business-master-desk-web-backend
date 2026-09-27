@@ -37,7 +37,7 @@ public class StockBatchController {
     @PUT
     @Path("/update-stock-batch-fields/{id}")
     @Transactional
-    @Operation(summary = "Update stock batch fields", description = "Updates specific fields: stockAtHand, profitMargin, reOrderLevel, reOrderQuantity, reOrderTo, unitOfMeasure, lastUnitValue, lastUnitOfMeasure. Only non-null request fields are applied.")
+    @Operation(summary = "Update stock batch fields", description = "Updates specific fields: stockAtHand, unitCostPrice, unitSellingPrice, expiryDate, shelfNumber, profit margins (retail/wholesale/special), reOrderLevel, reOrderQuantity, reOrderTo, unitOfMeasure, lastUnitValue, lastUnitOfMeasure. Only non-null request fields are applied.")
     @APIResponse(description = "Stock batch fields updated successfully.", responseCode = "200", content = @Content(schema = @Schema(implementation = StockBatchDTO.class)))
     public Response updateStockBatchFields(@PathParam("id") Long id, StockBatchFieldsUpdateRequest request) {
         return stockBatchService.updateStockBatchFields(id, request);

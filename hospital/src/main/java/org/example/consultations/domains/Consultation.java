@@ -107,6 +107,18 @@ public class Consultation extends PanacheEntity {
     @OneToMany(mappedBy = "consultation", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     public List<Complaint> complaints = new ArrayList<>();
 
+    // Structured presenting complaints (SOCRATES-style rows)
+    @OneToMany(mappedBy = "consultation", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    public List<PresentingComplaint> presentingComplaints = new ArrayList<>();
+
+    // Structured physical / clinical examinations
+    @OneToMany(mappedBy = "consultation", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    public List<PhysicalExamination> physicalExaminations = new ArrayList<>();
+
+    // Structured diagnoses for this consultation (each may link treatments)
+    @OneToMany(mappedBy = "consultation", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    public List<Diagnosis> diagnoses = new ArrayList<>();
+
     // You can add other fields as needed to capture consultation details
 
     @JsonbDateFormat(value = "yyyy/MM/dd")

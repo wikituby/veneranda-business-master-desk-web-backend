@@ -6,7 +6,6 @@ import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
-import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
@@ -21,16 +20,17 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.example.configuration.handler.ActionMessages;
 import org.example.configuration.handler.ResponseMessage;
 import org.example.consultations.services.payloads.responses.ConsultationDTO;
+import org.example.consultations.services.payloads.responses.ConsultationDocumentDTO;
+import org.example.consultations.services.payloads.requests.ConsultationDocumentRequest;
 import org.example.consultations.services.payloads.requests.ConsultationRequest;
 import org.example.consultations.services.ConsultationService;
-import org.example.vitals.services.payloads.responses.InitialTriageVitalsDTO;
 
 import java.util.List;
 
-@Path("Patient-management")
+@Path("Client-management")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-@Tag(name = "Patient Management Module - consultations", description = "Patient Management")
+@Tag(name = "Client Management Module - consultations", description = "Client Management")
 
 
 public class ConsultationController {
@@ -73,6 +73,30 @@ public class ConsultationController {
         return Response.ok(new ResponseMessage(ActionMessages.FETCHED.label, consultations)).build();
     }
 
+    @GET
+    @Path("get-consultation-documents-by-visit/{visitId}")
+    @Operation(summary = "List consultation documents for a visit")
+    @APIResponse(description = "Successful", responseCode = "200", content = @Content(schema = @Schema(implementation = ConsultationDocumentDTO.class, type = SchemaType.ARRAY)))
+    public Response getConsultationDocumentsByVisit(@PathParam("visitId") Long visitId) {
+        List<ConsultationDocumentDTO> documents = consultationService.listConsultationDocumentsByVisitId(visitId);
+        return Response.ok(new ResponseMessage(ActionMessages.FETCHED.label, documents)).build();
+    }
+
+    @POST
+    @Path("create-consultation-document/{visitId}")
+    @Transactional
+    @Operation(summary = "Attach an uploaded document to a visit consultation")
+    public Response createConsultationDocument(@PathParam("visitId") Long visitId, ConsultationDocumentRequest request) {
+        return consultationService.createConsultationDocumentForVisit(visitId, request);
+    }
+
+    @DELETE
+    @Path("delete-consultation-document/{id}")
+    @Transactional
+    @Operation(summary = "Remove a consultation document record")
+    public Response deleteConsultationDocument(@PathParam("id") Long id) {
+        return consultationService.deleteConsultationDocumentById(id);
+    }
 
 }
 

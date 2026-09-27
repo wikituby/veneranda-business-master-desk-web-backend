@@ -10,16 +10,26 @@ import org.example.inventory.item.domain.*;
 import org.example.inventory.item.domain.repositories.*;
 import org.example.inventory.stock.domains.StockBatch;
 import org.example.inventory.stock.domains.StockItem;
+import org.example.inventory.stock.domains.StockItemIndication;
 import org.example.inventory.stock.domains.repositories.StockBatchRepository;
+import org.example.inventory.stock.domains.repositories.StockItemIndicationRepository;
 import org.example.inventory.stock.domains.repositories.StockItemRepository;
 import org.example.inventory.stock.domains.repositories.StockReceiveRepository;
+import org.example.inventory.stock.services.payloads.requests.StockItemIndicationRequest;
 import org.example.inventory.stock.services.payloads.requests.StockItemIngredientRequest;
 import org.example.inventory.stock.services.payloads.requests.StockItemRequest;
 import org.example.inventory.stock.services.payloads.responses.dtos.StockItemDTO;
+import org.example.inventory.stock.services.payloads.responses.dtos.StockItemIndicationDTO;
 import org.example.inventory.store.domains.repositories.StoreRepository;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @ApplicationScoped
@@ -64,20 +74,38 @@ public class StockItemService {
     @Inject
     StockReceiveRepository stockReceiveRepository;
 
+    @Inject
+    StockItemIndicationRepository stockItemIndicationRepository;
+
     /**
      * Create or update a StockItem
      */
     @Transactional
     public Response createOrUpdateStockItem(StockItemRequest request) {
         try {
-            // Generate stockItemName automatically
-            String generatedStockItemName = generateStockItemName(request);
+            // Prefer explicit product name (business items); otherwise auto-build from drug fields
+            String generatedStockItemName = resolveStockItemName(request);
             
-            // 🔍 Check if item with same generated name and brand exists
-            StockItem existing = stockItemRepository.find(
-                    "stockItemName = ?1 and brandId = ?2",
-                    generatedStockItemName, request.brandId
-            ).firstResult();
+            // 🔍 Check if item with same generated name and brand exists (case-insensitive)
+            StockItem existing;
+            String nameKey = generatedStockItemName.toLowerCase();
+            if (request.brandId != null) {
+                existing = stockItemRepository.find(
+                        "lower(stockItemName) = ?1 and brandId = ?2",
+                        nameKey, request.brandId
+                ).firstResult();
+            } else {
+                existing = stockItemRepository.find(
+                        "lower(stockItemName) = ?1 and brandId is null",
+                        nameKey
+                ).firstResult();
+            }
+
+            if (existing != null && Boolean.TRUE.equals(request.createOnly)) {
+                return Response.status(Response.Status.CONFLICT)
+                        .entity(new ResponseMessage("Product already exists", toStockItemDTO(existing)))
+                        .build();
+            }
 
             if (existing == null) {
                 // 🆕 Create new StockItem
@@ -161,19 +189,11 @@ public class StockItemService {
                     }
                 }
                 
-                // Prescribing units
-                stockItem.lastUnitOfPrescribingMeasureStrengthUnit = request.lastUnitOfPrescribingMeasureStrengthUnit;
-                // Set lastUnitOfPrescribingMeasureStrengthUnitTitle from strengthUnit repository
-                if (request.lastUnitOfPrescribingMeasureStrengthUnit != null) {
-                    StrengthUnit unit = strengthUnitRepository.findById(request.lastUnitOfPrescribingMeasureStrengthUnit);
-                    if (unit != null && unit.title != null) {
-                        stockItem.lastUnitOfPrescribingMeasureStrengthUnitTitle = unit.title;
-                    }
-                }
+                applyPrescribingMeasureFields(stockItem, request);
                 
                 // Others - medical information fields
                 stockItem.indication = request.indication;
-                stockItem.image = request.image;
+                stockItem.image = sanitizeImageUrlForDb(request.image);
                 stockItem.contraIndication = request.contraIndication;
                 stockItem.drugIteractions = request.drugIteractions;
                 stockItem.description = request.description;
@@ -187,6 +207,7 @@ public class StockItemService {
                 stockItem.descriptionAfterReconstitution = request.descriptionAfterReconstitution;
                 stockItem.storage = request.storage;
                 stockItem.antiDote = request.antiDote;
+                applyBusinessProductFields(stockItem, request, true);
                 
                 stockItem.creationDate = LocalDate.now();
                 stockItem.updateDate = LocalDate.now();
@@ -195,8 +216,9 @@ public class StockItemService {
                 
                 // Save ingredients/compositions
                 saveCompositions(stockItem.id, request.ingredients);
+                syncIndications(stockItem, request);
                 
-                return Response.ok(new ResponseMessage("Stock item created successfully", new StockItemDTO(stockItem))).build();
+                return Response.ok(new ResponseMessage("Stock item created successfully", toStockItemDTO(stockItem))).build();
             } else {
                 // 🔄 Update existing StockItem
                 existing.stockItemName = generatedStockItemName;
@@ -278,19 +300,11 @@ public class StockItemService {
                     }
                 }
                 
-                // Prescribing units
-                existing.lastUnitOfPrescribingMeasureStrengthUnit = request.lastUnitOfPrescribingMeasureStrengthUnit;
-                // Set lastUnitOfPrescribingMeasureStrengthUnitTitle from strengthUnit repository
-                if (request.lastUnitOfPrescribingMeasureStrengthUnit != null) {
-                    StrengthUnit unit = strengthUnitRepository.findById(request.lastUnitOfPrescribingMeasureStrengthUnit);
-                    if (unit != null && unit.title != null) {
-                        existing.lastUnitOfPrescribingMeasureStrengthUnitTitle = unit.title;
-                    }
-                }
+                applyPrescribingMeasureFields(existing, request);
                 
                 // Others - medical information fields
                 existing.indication = request.indication;
-                existing.image = request.image;
+                existing.image = sanitizeImageUrlForDb(request.image);
                 existing.contraIndication = request.contraIndication;
                 existing.drugIteractions = request.drugIteractions;
                 existing.description = request.description;
@@ -304,6 +318,7 @@ public class StockItemService {
                 existing.descriptionAfterReconstitution = request.descriptionAfterReconstitution;
                 existing.storage = request.storage;
                 existing.antiDote = request.antiDote;
+                applyBusinessProductFields(existing, request, false);
                 
                 existing.updateDate = LocalDate.now();
 
@@ -313,8 +328,9 @@ public class StockItemService {
                 // Delete existing compositions and save new ones
                 deleteCompositionsByStockItemId(existing.id);
                 saveCompositions(existing.id, request.ingredients);
+                syncIndications(existing, request);
                 
-                return Response.ok(new ResponseMessage("Stock item updated successfully", new StockItemDTO(existing))).build();
+                return Response.ok(new ResponseMessage("Stock item updated successfully", toStockItemDTO(existing))).build();
             }
 
         } catch (Exception e) {
@@ -329,9 +345,10 @@ public class StockItemService {
      */
     @Transactional
     public List<StockItemDTO> getAllStockItems() {
+        CategoryLookup categoryLookup = CategoryLookup.from(categoryRepository.listAll());
         return stockItemRepository.listAll(Sort.descending("id"))
                 .stream()
-                .map(StockItemDTO::new)
+                .map(item -> toStockItemDTO(item, categoryLookup))
                 .collect(Collectors.toList());
     }
 
@@ -346,7 +363,7 @@ public class StockItemService {
                     .entity(new ResponseMessage("StockItem not found with ID: " + id, null))
                     .build();
         }
-        return Response.ok(new ResponseMessage("StockItem found", new StockItemDTO(stockItem))).build();
+        return Response.ok(new ResponseMessage("StockItem found", toStockItemDTO(stockItem))).build();
     }
 
     /**
@@ -362,8 +379,8 @@ public class StockItemService {
                         .build();
             }
 
-            // Generate stockItemName automatically
-            String generatedStockItemName = generateStockItemName(request);
+            // Prefer explicit product name (business items); otherwise auto-build from drug fields
+            String generatedStockItemName = resolveStockItemName(request);
             stockItem.stockItemName = generatedStockItemName;
             stockItem.brandId = request.brandId;
             
@@ -443,19 +460,11 @@ public class StockItemService {
                 }
             }
             
-            // Prescribing units
-            stockItem.lastUnitOfPrescribingMeasureStrengthUnit = request.lastUnitOfPrescribingMeasureStrengthUnit;
-            // Set lastUnitOfPrescribingMeasureStrengthUnitTitle from strengthUnit repository
-            if (request.lastUnitOfPrescribingMeasureStrengthUnit != null) {
-                StrengthUnit unit = strengthUnitRepository.findById(request.lastUnitOfPrescribingMeasureStrengthUnit);
-                if (unit != null && unit.title != null) {
-                    stockItem.lastUnitOfPrescribingMeasureStrengthUnitTitle = unit.title;
-                }
-            }
+            applyPrescribingMeasureFields(stockItem, request);
             
             // Others - medical information fields
             stockItem.indication = request.indication;
-            stockItem.image = request.image;
+            stockItem.image = sanitizeImageUrlForDb(request.image);
             stockItem.contraIndication = request.contraIndication;
             stockItem.drugIteractions = request.drugIteractions;
             stockItem.description = request.description;
@@ -469,6 +478,7 @@ public class StockItemService {
             stockItem.descriptionAfterReconstitution = request.descriptionAfterReconstitution;
             stockItem.storage = request.storage;
             stockItem.antiDote = request.antiDote;
+            applyBusinessProductFields(stockItem, request, false);
             
             stockItem.updateDate = LocalDate.now();
 
@@ -478,8 +488,9 @@ public class StockItemService {
             // Delete existing compositions and save new ones
             deleteCompositionsByStockItemId(stockItem.id);
             saveCompositions(stockItem.id, request.ingredients);
+            syncIndications(stockItem, request);
             
-            return Response.ok(new ResponseMessage("Stock item updated successfully", new StockItemDTO(stockItem))).build();
+            return Response.ok(new ResponseMessage("Stock item updated successfully", toStockItemDTO(stockItem))).build();
             
         } catch (Exception e) {
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
@@ -665,7 +676,85 @@ public class StockItemService {
     }
     
     /**
-     * Generate stockItemName from: Brand + Formulation + LowestPackage + RouteOfAdmin + TotalComposition + TotalCompositionUnit + ActiveIngredients
+     * Prefer an explicit product name from the client (Flutter-aligned business items).
+     * Fall back to the legacy auto-built drug display name when blank.
+     */
+    private String resolveStockItemName(StockItemRequest request) {
+        if (request != null && request.stockItemName != null && !request.stockItemName.trim().isEmpty()) {
+            return request.stockItemName.trim();
+        }
+        String generated = generateStockItemName(request);
+        if (generated != null && !generated.trim().isEmpty()) {
+            return generated.trim();
+        }
+        return "Untitled product";
+    }
+
+    /** Business / retail product fields aligned with Flutter new-item form. */
+    private void applyBusinessProductFields(StockItem entity, StockItemRequest request, boolean isCreate) {
+        if (entity == null || request == null) {
+            return;
+        }
+        entity.image2 = sanitizeImageUrlForDb(request.image2);
+        entity.image3 = sanitizeImageUrlForDb(request.image3);
+        entity.imageLocal = sanitizeImageUrlForDb(request.imageLocal);
+        entity.imageLocal2 = sanitizeImageUrlForDb(request.imageLocal2);
+        entity.imageLocal3 = sanitizeImageUrlForDb(request.imageLocal3);
+        entity.barcode = blankToNull(request.barcode);
+        entity.shelfNumber = blankToNull(request.shelfNumber);
+        entity.businessCategory = blankToNull(request.businessCategory);
+        entity.saleCategory = blankToNull(request.saleCategory);
+        entity.unit = blankToNull(request.unit);
+        entity.unitShort = blankToNull(request.unitShort);
+        entity.costPrice = request.costPrice != null ? request.costPrice : BigDecimal.ZERO;
+        entity.sellingPrice = request.sellingPrice != null ? request.sellingPrice : BigDecimal.ZERO;
+        if (request.useUnitSellingModel != null) {
+            entity.useUnitSellingModel = request.useUnitSellingModel;
+        } else if (isCreate) {
+            entity.useUnitSellingModel = Boolean.TRUE;
+        }
+        entity.stockQty = request.stockQty != null ? request.stockQty : BigDecimal.ZERO;
+        entity.reorderLevel = request.reorderLevel != null ? request.reorderLevel : BigDecimal.ZERO;
+        entity.restockTo = request.restockTo != null ? request.restockTo : BigDecimal.ZERO;
+
+        String sku = blankToNull(request.sku);
+        if (sku != null) {
+            entity.sku = sku;
+        } else if (isCreate || entity.sku == null || entity.sku.trim().isEmpty()) {
+            entity.sku = "ITM-" + System.currentTimeMillis();
+        }
+        // Keep primary image from request.image (already assigned by callers)
+    }
+
+
+    /**
+     * DB may only store remote http(s) URLs or local folder URLs (/stock-item/local-images/...).
+     * Never persist base64 / data:image payloads in TEXT columns.
+     */
+    private String sanitizeImageUrlForDb(String value) {
+        String trimmed = blankToNull(value);
+        if (trimmed == null) {
+            return null;
+        }
+        String lower = trimmed.toLowerCase();
+        if (lower.startsWith("data:") || lower.contains(";base64,")) {
+            return null;
+        }
+        return trimmed;
+    }
+
+    private String blankToNull(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
+    }
+
+    /**
+     * Generate stockItemName from:
+     * Brand + Formulation + Last Unit of Sell Measure + RouteOfAdmin
+     * + TotalComposition + ActiveIngredients (name strength unit, comma-separated)
      */
     private String generateStockItemName(StockItemRequest request) {
         List<String> parts = new java.util.ArrayList<>();
@@ -686,12 +775,9 @@ public class StockItemService {
             }
         }
         
-        // Lowest Package title
-        if (request.lowestPackageId != null) {
-            LowestPackage lowestPackage = lowestPackageRepository.findById(request.lowestPackageId);
-            if (lowestPackage != null && lowestPackage.title != null) {
-                parts.add(lowestPackage.title);
-            }
+        // Last Unit of Sell Measure
+        if (request.lastUnitOfSellMeasure != null && !request.lastUnitOfSellMeasure.trim().isEmpty()) {
+            parts.add(request.lastUnitOfSellMeasure.trim());
         }
         
         // Route of Admin title
@@ -717,21 +803,6 @@ public class StockItemService {
             parts.add(request.totalCompositionValue + " " + unitName);
         }
         
-        // Reconstitution Value + Unit (using abbreviation)
-        if (request.reconstitutionValue != null && request.reconstitutionUnitId != null) {
-            StrengthUnit unit = strengthUnitRepository.findById(request.reconstitutionUnitId);
-            String unitName = "";
-            if (unit != null) {
-                // Use abbreviation if available, otherwise fall back to title
-                if (unit.standardAbbreviation != null && !unit.standardAbbreviation.trim().isEmpty()) {
-                    unitName = unit.standardAbbreviation;
-                } else if (unit.title != null) {
-                    unitName = unit.title;
-                }
-            }
-            parts.add(request.reconstitutionValue + " " + unitName);
-        }
-        
         // Active Ingredients with their strengths (using abbreviation)
         if (request.ingredients != null && !request.ingredients.isEmpty()) {
             for (StockItemIngredientRequest ingredient : request.ingredients) {
@@ -749,12 +820,164 @@ public class StockItemService {
                             unitName = unit.title;
                         }
                     }
-                    parts.add(itemName + " " + ingredient.strength + " " + unitName);
+                    if (itemName != null && !itemName.trim().isEmpty()) {
+                        parts.add(itemName.trim() + " " + ingredient.strength + " " + unitName);
+                    }
                 }
             }
         }
         
         return String.join(", ", parts);
+    }
+
+    private StockItemDTO toStockItemDTO(StockItem entity) {
+        return toStockItemDTO(entity, CategoryLookup.from(categoryRepository.listAll()));
+    }
+
+    private StockItemDTO toStockItemDTO(StockItem entity, CategoryLookup categoryLookup) {
+        StockItemDTO dto = new StockItemDTO(entity);
+        dto.indications = loadIndicationDtos(entity);
+        if (entity.itemCategoryId == null) {
+            return dto;
+        }
+
+        Category category = categoryLookup.findById(entity.itemCategoryId);
+        if (category == null) {
+            return dto;
+        }
+
+        if (dto.itemCategoryName == null || dto.itemCategoryName.isBlank()) {
+            dto.itemCategoryName = category.name;
+        }
+
+        Category topParent = categoryLookup.resolveTopParent(category);
+        dto.lastCategoryId = topParent.id;
+        dto.lastCategoryName = topParent.name;
+        return dto;
+    }
+
+    /**
+     * Replace indication entity rows when {@code request.indications} is provided.
+     * Also keeps legacy {@link StockItem#indication} as a joined summary string.
+     */
+    private void syncIndications(StockItem stockItem, StockItemRequest request) {
+        if (stockItem == null || stockItem.id == null || request == null) {
+            return;
+        }
+        if (request.indications == null) {
+            return;
+        }
+
+        deleteIndicationsByStockItemId(stockItem.id);
+
+        List<String> texts = new ArrayList<>();
+        int order = 0;
+        for (StockItemIndicationRequest row : request.indications) {
+            String text = row != null && row.text != null ? row.text.trim() : null;
+            if (text == null || text.isEmpty()) {
+                continue;
+            }
+            StockItemIndication indication = new StockItemIndication();
+            indication.stockItemId = stockItem.id;
+            indication.text = text;
+            indication.sortOrder = order++;
+            stockItemIndicationRepository.persist(indication);
+            texts.add(text);
+        }
+        stockItem.indication = texts.isEmpty() ? null : String.join("; ", texts);
+    }
+
+    private void deleteIndicationsByStockItemId(Long stockItemId) {
+        List<StockItemIndication> rows = stockItemIndicationRepository.find("stockItemId", stockItemId).list();
+        for (StockItemIndication row : rows) {
+            stockItemIndicationRepository.delete(row);
+        }
+    }
+
+    private List<StockItemIndicationDTO> loadIndicationDtos(StockItem entity) {
+        if (entity == null || entity.id == null) {
+            return List.of();
+        }
+        List<StockItemIndicationDTO> rows = stockItemIndicationRepository
+                .list("stockItemId", Sort.ascending("sortOrder", "id"), entity.id)
+                .stream()
+                .map(StockItemIndicationDTO::new)
+                .collect(Collectors.toList());
+        if (!rows.isEmpty()) {
+            return rows;
+        }
+        // Legacy fallback: split single TEXT field into editable rows
+        if (entity.indication == null || entity.indication.isBlank()) {
+            return List.of();
+        }
+        List<StockItemIndicationDTO> fallback = new ArrayList<>();
+        int order = 0;
+        for (String part : entity.indication.split("[;\\n]+")) {
+            String text = part != null ? part.trim() : "";
+            if (text.isEmpty()) {
+                continue;
+            }
+            fallback.add(new StockItemIndicationDTO(null, text, order++));
+        }
+        return fallback;
+    }
+
+    private static final class CategoryLookup {
+        private final Map<Long, Category> byId;
+        private final Map<Long, Long> parentIdById;
+
+        private CategoryLookup(Map<Long, Category> byId, Map<Long, Long> parentIdById) {
+            this.byId = byId;
+            this.parentIdById = parentIdById;
+        }
+
+        static CategoryLookup from(List<Category> categories) {
+            Map<Long, Category> byId = new HashMap<>();
+            Map<Long, Long> parentIdById = new HashMap<>();
+            for (Category category : categories) {
+                byId.put(category.id, category);
+                if (category.parent != null) {
+                    parentIdById.put(category.id, category.parent.id);
+                }
+            }
+            return new CategoryLookup(byId, parentIdById);
+        }
+
+        Category findById(Long id) {
+            return byId.get(id);
+        }
+
+        Category resolveTopParent(Category category) {
+            Category current = category;
+            Set<Long> visited = new HashSet<>();
+            while (parentIdById.containsKey(current.id)) {
+                if (!visited.add(current.id)) {
+                    break;
+                }
+                Long parentId = parentIdById.get(current.id);
+                Category parent = byId.get(parentId);
+                if (parent == null) {
+                    break;
+                }
+                current = parent;
+            }
+            return current;
+        }
+    }
+
+    private void applyPrescribingMeasureFields(StockItem stockItem, StockItemRequest request) {
+        stockItem.lastUnitOfPrescribingMeasureStrengthUnit = request.lastUnitOfPrescribingMeasureStrengthUnit;
+        if (request.lastUnitOfPrescribingMeasureStrengthUnit != null) {
+            StrengthUnit unit = strengthUnitRepository.findById(request.lastUnitOfPrescribingMeasureStrengthUnit);
+            if (unit != null) {
+                stockItem.lastUnitOfPrescribingMeasureStrengthUnitTitle = unit.prescribingLabel();
+            }
+        }
+        stockItem.prescribingPeriodBasis = request.prescribingPeriodBasis;
+        stockItem.prescribingDosageJson = request.prescribingDosageJson;
+        stockItem.prescribingFrequencyMode = request.prescribingFrequencyMode;
+        stockItem.prescribingFrequencyFixed = request.prescribingFrequencyFixed;
+        stockItem.prescribingFrequencyCustomHours = request.prescribingFrequencyCustomHours;
     }
 
     private static Long resolveActiveIngredientId(StockItemIngredientRequest ingredient) {

@@ -17,6 +17,7 @@ import org.example.configuration.handler.ResponseMessage;
 import org.example.finance.invoice.services.payloads.responses.InvoiceDTO;
 import org.example.finance.invoice.services.InvoiceService;
 import org.example.finance.invoice.services.payloads.requests.InvoiceUpdateRequest;
+import org.example.finance.invoice.services.payloads.requests.StatementPdfRequest;
 import org.example.statics.StatusTypes;
 
 import java.math.BigDecimal;
@@ -24,10 +25,10 @@ import java.util.List;
 import java.util.Map;
 
 
-@Path("Patient-management")
+@Path("Client-management")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-@Tag(name = "Patient Management Module", description = "Patient Management")
+@Tag(name = "Client Management Module", description = "Client Management")
 
 public class InvoiceController {
 
@@ -141,6 +142,24 @@ public class InvoiceController {
     @APIResponse(description = "Successful", responseCode = "200", content = @Content(schema = @Schema(implementation = Response.class)))
     public Response generateAndReturnMedicalStatementPdfForAvisitNow(@PathParam("id") Long visitId) {
         return invoiceService.generateAndReturnMedicalStatementPdfForAvisit(visitId);
+    }
+
+    @POST
+    @Transactional
+    @Path("statement/generate-pdf/{id}")
+    @Operation(summary = "statement pdf with options", description = "Generate statement PDF with selected treatments and optional next of kin")
+    @APIResponse(description = "Successful", responseCode = "200", content = @Content(schema = @Schema(implementation = Response.class)))
+    public Response generateAndReturnMedicalStatementPdfForAvisitWithOptions(
+            @PathParam("id") Long visitId,
+            @QueryParam("documentType") String documentType,
+            StatementPdfRequest request) {
+        if (request == null) {
+            request = new StatementPdfRequest();
+        }
+        if (documentType != null && !documentType.isBlank()) {
+            request.documentType = documentType.trim();
+        }
+        return invoiceService.generateAndReturnMedicalStatementPdfForAvisit(visitId, request);
     }
 
     @GET

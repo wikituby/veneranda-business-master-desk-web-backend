@@ -35,7 +35,7 @@ import org.jsoup.select.Elements;
 
 
 import io.quarkus.panache.common.Sort;
-import io.vertx.mutiny.mysqlclient.MySQLPool;
+import io.vertx.mutiny.sqlclient.Pool;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
@@ -48,6 +48,9 @@ import org.example.client.domains.PatientGroup;
 import org.example.configuration.handler.ResponseMessage;
 import org.example.consultations.services.payloads.responses.ConsultationDTO;
 import org.example.diagnostics.ultrasoundScan.generalUs.domains.repositories.GeneralUsRepository;
+import org.example.subscription.services.FacilityBranding;
+import org.example.subscription.services.FacilityBrandingService;
+import org.example.subscription.services.FacilityPdfLogoService;
 import org.example.diagnostics.ultrasoundScan.generalUs.services.Payloads.requests.GeneralUsUpdateRequest;
 import org.example.diagnostics.ultrasoundScan.generalUs.services.Payloads.responses.GeneralUsDTO;
 import org.example.diagnostics.ultrasoundScan.generalUs.domains.GeneralUs;
@@ -79,8 +82,17 @@ public class GeneralUsService {
     ProcedureRequestedRepository procedureRequestedRepository;
 
     @Inject
-    MySQLPool client;
+    Pool client;
 
+    @Inject
+    FacilityBrandingService facilityBrandingService;
+
+    @Inject
+    FacilityPdfLogoService facilityPdfLogoService;
+
+    private FacilityBranding facilityBranding() {
+        return facilityBrandingService.resolveDefaultBranding();
+    }
 
     public static final String NOT_FOUND = "Not found!";
 
@@ -279,7 +291,7 @@ public class GeneralUsService {
                     )
                     .setBorder(Border.NO_BORDER)
                     .setPaddingBottom(15)
-                    .add(new Paragraph("Department of Medical Diagnostics-Veneranda Medical (A subsidiary of Veneranda HealthCare) Address:Bugogo Town Council-Kyegegwa.\n For inquiries / suggestions call: 0784411848 / 0704968736. Email:venerandahospital@gmail.com.")
+                    .add(new Paragraph(facilityBranding().diagnosticsHeaderLine())
                             .setFontSize(9)
                             .setMarginTop(3)
                             .setTextAlignment(TextAlignment.CENTER))
@@ -567,26 +579,8 @@ public class GeneralUsService {
 
 
 
-    public static com.itextpdf.layout.element.Image getLogo() {
-        try {
-            // Load the image as a stream from the classpath
-            InputStream logoStream = Thread.currentThread().getContextClassLoader().getResourceAsStream("logo-modified.png");
-
-            if (logoStream == null) {
-                throw new RuntimeException("Logo image not found in classpath.");
-            }
-
-            byte[] imageBytes = logoStream.readAllBytes(); // Java 9+; use IOUtils for Java 8
-            ImageData imageData = ImageDataFactory.create(imageBytes);
-
-            com.itextpdf.layout.element.Image logo = new Image(imageData);
-            logo.scaleToFit(80, 80);
-            logo.setHorizontalAlignment(HorizontalAlignment.CENTER);
-
-            return logo;
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to load the logo image.", e);
-        }
+    private com.itextpdf.layout.element.Image getLogo() {
+        return facilityPdfLogoService.createLogoImage();
     }
 
 

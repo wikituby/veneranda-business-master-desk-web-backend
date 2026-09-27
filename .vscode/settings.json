@@ -1,4 +1,10 @@
 {
-    "java.dependency.packagePresentation": "flat",
-    "java.dependency.syncWithFolderExplorer": false
+  "java.configuration.runtimes": [
+    {
+      "name": "JavaSE-21",
+      "path": "C:\\Program Files\\Amazon Corretto\\jdk21.0.11_10",
+      "default": true
+    }
+  ],
+  "java.jdt.ls.java.home": "C:\\Program Files\\Amazon Corretto\\jdk21.0.11_10"
 }

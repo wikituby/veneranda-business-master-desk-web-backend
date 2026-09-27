@@ -8,7 +8,10 @@ import org.example.visit.domains.PatientVisit;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 @Entity
 public class Patient extends PanacheEntity {
@@ -20,9 +23,19 @@ public class Patient extends PanacheEntity {
     @Column(nullable = false)
     public String patientSecondName;
 
+    /** Primary / default group (kept for visit scheme snapshot and legacy APIs). */
     @ManyToOne
     @JoinColumn(name = "group_id")
     public PatientGroup patientGroup;
+
+    /** All groups this patient belongs to (includes primary when set). */
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+            name = "patient_patient_group",
+            joinColumns = @JoinColumn(name = "patient_id"),
+            inverseJoinColumns = @JoinColumn(name = "group_id")
+    )
+    public Set<PatientGroup> patientGroups = new HashSet<>();
 
     @Column
     public String patientAddress;
@@ -48,6 +61,9 @@ public class Patient extends PanacheEntity {
 
     @Column
     public String occupation;
+
+    @Column
+    public String bloodGroup;
 
     @Column
     public LocalDate creationDate;
@@ -95,10 +111,42 @@ public class Patient extends PanacheEntity {
         this.patientGroup = patientGroup;
     }
 
-
-
     public PatientGroup getPatientGroup() {
         return patientGroup;
+    }
+
+    /** Primary group plus any additional memberships (deduped, primary first). */
+    public Set<PatientGroup> resolveAllGroups() {
+        LinkedHashSet<PatientGroup> all = new LinkedHashSet<>();
+        if (patientGroup != null) {
+            all.add(patientGroup);
+        }
+        if (patientGroups != null) {
+            all.addAll(patientGroups);
+        }
+        return all;
+    }
+
+    public boolean isMemberOfGroupId(Long groupId) {
+        if (groupId == null) {
+            return false;
+        }
+        for (PatientGroup g : resolveAllGroups()) {
+            if (g != null && groupId.equals(g.id)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public boolean hasCompassionMembership() {
+        for (PatientGroup g : resolveAllGroups()) {
+            if (g != null && g.groupNameShortForm != null
+                    && "compassion".equalsIgnoreCase(g.groupNameShortForm.trim())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public BigDecimal getTotalBalanceDue() {

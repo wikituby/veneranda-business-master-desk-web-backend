@@ -19,6 +19,14 @@ public class PaymentRequest {
 
     @Schema(example = "John Doe")
     public String receivedBy;
+
+    /** Optional; defaults to today when omitted. */
+    @Schema(example = "2026-09-08")
+    public java.time.LocalDate dateOfPayment;
+
+    /** Optional; defaults to now when omitted. */
+    @Schema(example = "14:30:00")
+    public java.time.LocalTime timeOfPayment;
 }
 
 

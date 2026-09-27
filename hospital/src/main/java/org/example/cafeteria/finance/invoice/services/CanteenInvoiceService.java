@@ -38,6 +38,7 @@ import org.example.cafeteria.sales.saleDay.domains.repository.SaleDayRepository;
 import org.example.cafeteria.sales.saleDone.domains.Sale;
 import org.example.configuration.handler.ActionMessages;
 import org.example.configuration.handler.ResponseMessage;
+import org.example.subscription.services.FacilityPdfLogoService;
 import org.example.procedure.procedureRequested.domains.ProcedureRequested;
 
 import java.io.ByteArrayInputStream;
@@ -68,6 +69,9 @@ public class CanteenInvoiceService {
 
     @Inject
     BuyerService buyerService;
+
+    @Inject
+    FacilityPdfLogoService facilityPdfLogoService;
 
     private static final String NOT_FOUND = "Not found!";
 
@@ -523,26 +527,8 @@ public class CanteenInvoiceService {
 
 
 
-    public static Image getLogo() {
-        try {
-            // Load the image as a stream from the classpath
-            InputStream logoStream = Thread.currentThread().getContextClassLoader().getResourceAsStream("logo.png");
-
-            if (logoStream == null) {
-                throw new RuntimeException("Logo image not found in classpath.");
-            }
-
-            byte[] imageBytes = logoStream.readAllBytes(); // Java 9+; use IOUtils for Java 8
-            ImageData imageData = ImageDataFactory.create(imageBytes);
-
-            Image logo = new Image(imageData);
-            logo.scaleToFit(80, 80);
-            logo.setHorizontalAlignment(HorizontalAlignment.CENTER);
-
-            return logo;
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to load the logo image.", e);
-        }
+    private Image getLogo() {
+        return facilityPdfLogoService.createLogoImage();
     }
 
 

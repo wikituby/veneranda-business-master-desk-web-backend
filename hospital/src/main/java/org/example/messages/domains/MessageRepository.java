@@ -15,6 +15,19 @@ public class MessageRepository implements PanacheRepository<Message> {
     public Long countUnreadMessages(Conversation conversation, Long userId) {
         return count("conversation = ?1 AND sender.id != ?2 AND isRead = false", conversation, userId);
     }
+
+    public long markConversationReadForRecipient(Conversation conversation, Long recipientUserId) {
+        return update(
+                "isRead = true where conversation = ?1 and sender.id != ?2 and isRead = false",
+                conversation,
+                recipientUserId);
+    }
+
+    public long countTotalUnreadForUser(Long userId) {
+        return count(
+                "(conversation.user1.id = ?1 OR conversation.user2.id = ?1) AND sender.id != ?1 AND isRead = false",
+                userId);
+    }
 }
 
 

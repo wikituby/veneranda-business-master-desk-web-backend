@@ -7,7 +7,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 
 @Entity
-@Table(name = "user")
+@Table(name = "users")
 public class User extends PanacheEntity {
 
     @Column(unique = true,nullable = false)
@@ -23,6 +23,10 @@ public class User extends PanacheEntity {
     @Column
     public String role;
 
+    /** Comma-separated additional roles (primary role remains in {@link #role}). */
+    @Column(length = 1000)
+    public String secondaryRoles;
+
     @Column
     public String qualification;
 
@@ -37,6 +41,33 @@ public class User extends PanacheEntity {
 
     @Column
     public String contact;
+
+    /** Comma-separated hospital module (department) ids this user may access in queue. */
+    @Column(length = 2000)
+    public String assignedModuleIds;
+
+    /** Comma-separated hospital clinic (room) ids this user may access in queue. */
+    @Column(length = 2000)
+    public String assignedClinicIds;
+
+    /** Comma-separated overview page route keys this user may access. */
+    @Column(length = 4000)
+    public String allowedPageRoutes;
+
+    /** Comma-separated page.component keys to hide (Access Control sub-component restrictions). */
+    @Column(length = 4000)
+    public String hiddenPageComponents;
+
+    /** Health facility this user belongs to (multi-tenant subscription). */
+    @Column
+    public Long facilityId;
+
+    /**
+     * Locked default for patient registry page size (8/15/25/50/100).
+     * Null means no saved default — UI uses the built-in default.
+     */
+    @Column
+    public Integer registryItemsPerPage;
 
     public User() {
     }
@@ -55,6 +86,23 @@ public class User extends PanacheEntity {
 
     public void setRole(String role) {
         this.role = role;
+    }
+
+    /** Primary role plus secondary roles (deduplicated, order preserved). */
+    public java.util.Set<String> allRoleNames() {
+        java.util.LinkedHashSet<String> roles = new java.util.LinkedHashSet<>();
+        if (role != null && !role.isBlank()) {
+            roles.add(role.trim());
+        }
+        if (secondaryRoles != null && !secondaryRoles.isBlank()) {
+            for (String part : secondaryRoles.split(",")) {
+                String trimmed = part == null ? "" : part.trim();
+                if (!trimmed.isBlank()) {
+                    roles.add(trimmed);
+                }
+            }
+        }
+        return roles;
     }
 
     public String getProfilePic() {

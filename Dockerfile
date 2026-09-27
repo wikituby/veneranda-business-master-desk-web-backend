@@ -1,7 +1,7 @@
 # ================================
 # Build stage
 # ================================
-FROM maven:3.9.9-eclipse-temurin-17 AS build
+FROM maven:3.9.9-eclipse-temurin-21 AS build
 WORKDIR /app
 
 # Copy Maven files first for better layer caching
@@ -15,13 +15,13 @@ RUN mvn dependency:go-offline -B || true
 # Copy source code
 COPY hospital/src ./src
 
-# Build the application
-RUN mvn clean package -DskipTests -B
+# Build for Render: PostgreSQL reactive client + prod Quarkus profile
+RUN mvn clean package -DskipTests -B -Preactive-pg,'!reactive-mysql' -Dquarkus.profile=prod
 
 # ================================
 # Runtime stage
 # ================================
-FROM eclipse-temurin:17-jre-jammy
+FROM eclipse-temurin:21-jre-jammy
 
 # Create non-root user for security
 RUN groupadd -r appuser && useradd -r -g appuser appuser
@@ -40,8 +40,8 @@ USER appuser
 # Expose port (Render will use this)
 EXPOSE 8080
 
-# Note: Render has built-in health checks
-# Configure health check endpoint in Render dashboard: /course/q/health or /course/health
+# Render health check: /health_care/health
+# Set QUARKUS_PROFILE=prod and datasource env vars on the service
 
 # Run with production-optimized JVM settings
 # MaxRAMPercentage ensures JVM respects container memory limits

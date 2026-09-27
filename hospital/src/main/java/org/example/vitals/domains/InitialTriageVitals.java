@@ -39,6 +39,10 @@ public class InitialTriageVitals extends PanacheEntity {
     @Column
     public Double map;
 
+    /** Pulse pressure (mmHg) = systolic − diastolic. */
+    @Column
+    public Double pulsePressure;
+
     // Body Temperature in Celsius (e.g., 37.2°C)
     @Column
     public Double temperature;  // Temperature in Celsius

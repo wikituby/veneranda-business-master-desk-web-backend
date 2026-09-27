@@ -8,6 +8,7 @@ import jakarta.persistence.ManyToOne;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 
 import org.example.treatment.domains.TreatmentRequested;
@@ -25,8 +26,9 @@ public class TreatmentChart extends PanacheEntity {
     @Column
     public LocalTime timeGiven;
 
-    @Column
-    public LocalTime timeBetweenGivenToNextDosage;
+    /** Interval label between doses, e.g. "8hrly", "24hrly", "q6h". */
+    @Column(length = 64)
+    public String timeBetweenGivenToNextDosage;
 
     @Column
     public LocalDate dateForNextDosage;
@@ -34,11 +36,18 @@ public class TreatmentChart extends PanacheEntity {
     @Column
     public LocalTime timeForNextDosage;
 
+    /** Set when a next-dose alert has been pushed for this chart entry. */
+    @Column
+    public LocalDateTime nextDoseAlertSentAt;
+
     @Column
     public String givenBy;
 
     @Column
     public String route;
+
+    @Column(length = 512)
+    public String instructions;
 
     @Column
     public BigDecimal dosageValue;
@@ -67,7 +76,12 @@ public class TreatmentChart extends PanacheEntity {
     @Column
     public String status;
 
-
+    /**
+     * When set, remaining doses were taken away rather than given at the facility.
+     * Values: {@code HOME}, {@code PERIPHERAL_CLINIC}.
+     */
+    @Column(length = 64)
+    public String administrationPlace;
 
 }
 

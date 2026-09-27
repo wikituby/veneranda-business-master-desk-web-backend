@@ -36,6 +36,15 @@ public class PatientGroup extends PanacheEntity {
     @JsonbDateFormat(value = "yyyy/MM/dd")
     public LocalDate patientGroupLastUpdatedDate;
 
+    /**
+     * When true, patients in this group may receive new services even if they have
+     * unpaid balances on previous visits (authorized credit group).
+     */
+    @Column(
+            name = "allowscreditdespiteunpaidbalance",
+            nullable = false,
+            columnDefinition = "boolean not null default false")
+    public Boolean allowsCreditDespiteUnpaidBalance = false;
 
     public String getGroupName() {
         return groupName;

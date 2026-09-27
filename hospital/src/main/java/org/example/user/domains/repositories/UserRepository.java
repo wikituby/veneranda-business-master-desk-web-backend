@@ -50,6 +50,13 @@ public class UserRepository implements PanacheRepository<User> {
         return find("username", username).singleResultOptional();
     }
 
+    public Optional<User> findByUsernameOrEmailOptional(String usernameOrEmail) {
+        if (usernameOrEmail == null || usernameOrEmail.isBlank()) {
+            return Optional.empty();
+        }
+        return find("username = ?1 OR email = ?1", usernameOrEmail.trim()).firstResultOptional();
+    }
+
     public Boolean usernameExists(String username) {
         return find("username", username).count() > 0;
     }
@@ -68,6 +75,27 @@ public class UserRepository implements PanacheRepository<User> {
 
     public List<User> getAllAgents() {
         return list("role", RoleEnums.agent.label);
+    }
+
+    @SuppressWarnings("unchecked")
+    public List<String> findDistinctRoles() {
+        return getEntityManager()
+                .createQuery("select distinct u.role from User u where u.role is not null and trim(u.role) <> ''", String.class)
+                .getResultList();
+    }
+
+    public long countByRoleIgnoreCase(String role) {
+        if (role == null || role.isBlank()) {
+            return 0;
+        }
+        return count("lower(role) = ?1", role.trim().toLowerCase());
+    }
+
+    public int renameRoleForUsers(String oldRole, String newRole) {
+        if (oldRole == null || oldRole.isBlank() || newRole == null || newRole.isBlank()) {
+            return 0;
+        }
+        return update("role = ?2 where lower(role) = ?1", oldRole.trim().toLowerCase(), newRole.trim());
     }
 }
 

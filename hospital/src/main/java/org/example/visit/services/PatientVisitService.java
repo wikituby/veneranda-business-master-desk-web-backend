@@ -26,10 +26,12 @@ import jakarta.transaction.Transactional;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;
 import org.example.client.domains.PatientGroup;
+import org.example.client.domains.repositories.PatientGroupRepository;
 import org.example.client.services.PatientGroupService;
 import org.example.client.services.PatientService;
 import org.example.client.services.payloads.responses.dtos.PatientDTO;
 import org.example.client.services.payloads.responses.dtos.PatientGroupDTO;
+import org.example.configuration.handler.ActionMessages;
 import org.example.configuration.handler.ResponseMessage;
 import org.example.client.domains.Patient;
 import org.example.client.domains.repositories.PatientRepository;
@@ -39,6 +41,11 @@ import org.example.finance.invoice.domains.Invoice;
 import org.example.finance.invoice.domains.repositories.InvoiceRepository;
 import org.example.finance.invoice.services.FooterHelperInvoice;
 import org.example.finance.invoice.services.InvoiceService;
+import org.example.subscription.services.FacilityBranding;
+import org.example.subscription.services.FacilityBrandingService;
+import org.example.subscription.services.FacilityPdfLogoService;
+import org.example.subscription.services.SpecialPrivilegeService;
+import org.example.configuration.security.AuthenticatedUserResolver;
 import org.example.procedure.procedureRequested.domains.ProcedureRequested;
 import org.example.procedure.procedureRequested.domains.repositories.ProcedureRequestedRepository;
 import org.example.visit.domains.PatientVisit;
@@ -56,8 +63,10 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -103,7 +112,29 @@ public class PatientVisitService {
     PatientGroupService patientGroupService;
 
     @Inject
+    PatientGroupRepository patientGroupRepository;
+
+    @Inject
     ConsultationRepository consultationRepository;
+
+    @Inject
+    FacilityBrandingService facilityBrandingService;
+
+    @Inject
+    FacilityPdfLogoService facilityPdfLogoService;
+
+    @Inject
+    CompassionGroupInvoiceDocxService compassionGroupInvoiceDocxService;
+
+    @Inject
+    SpecialPrivilegeService specialPrivilegeService;
+
+    @Inject
+    AuthenticatedUserResolver authenticatedUserResolver;
+
+    private FacilityBranding facilityBranding() {
+        return facilityBrandingService.resolveDefaultBranding();
+    }
 
     public static final String NOT_FOUND = "Not found!";
 
@@ -120,9 +151,14 @@ public class PatientVisitService {
             throw new IllegalArgumentException("Patient not found for ID: " + id);
         }
 
+        boolean allowConcurrentOpen = request != null && Boolean.TRUE.equals(request.allowConcurrentOpen);
         List<PatientVisit> openVisits = PatientVisit.find("patient.id = ?1 and visitStatus = ?2", id, "open").list();
-        if (!openVisits.isEmpty()) {
-            throw new IllegalStateException("Please first Close the open visits before opening a new one.");
+        if (!openVisits.isEmpty() && !allowConcurrentOpen) {
+            throw new WebApplicationException(
+                    Response.status(Response.Status.BAD_REQUEST)
+                            .entity(new ResponseMessage(
+                                    "Please first close the open visit before opening a new one.", null))
+                            .build());
         }
 
         // Generate unique visit number
@@ -139,13 +175,12 @@ public class PatientVisitService {
 
         // Create a new visit
         PatientVisit patientVisit = new PatientVisit();
-        patientVisit.visitDate = LocalDate.now();
-        patientVisit.visitTime = LocalTime.now();
-        patientVisit.visitReason = "Consultation";
+        patientVisit.visitDate = request.visitDate != null ? request.visitDate : LocalDate.now();
+        patientVisit.visitTime = request.visitTime != null ? request.visitTime : LocalTime.now();
+        patientVisit.visitReason = hasText(request.visitReason) ? request.visitReason : "Consultation";
 
         copyPatientSnapshotToVisit(patientVisit, patient);
-
-
+        applyPatientVisitCreateRequest(patientVisit, request);
 
         // PROPER NULL CHECKING - fix the error
         if (patient.patientGroup != null && patient.patientGroup.id != null) {
@@ -163,7 +198,15 @@ public class PatientVisitService {
         patientVisit.balanceDue = BigDecimal.valueOf(0.00);
         patientVisit.amountPaid = BigDecimal.valueOf(0.00);
         patientVisit.totalAmount = BigDecimal.valueOf(0.00);
+        patientVisit.totalSell = BigDecimal.valueOf(0.00);
         patientVisit.subTotal = BigDecimal.valueOf(0.00);
+        patientVisit.tax = BigDecimal.valueOf(0.00);
+        patientVisit.discount = BigDecimal.valueOf(0.00);
+        patientVisit.totalCost = BigDecimal.valueOf(0.00);
+        patientVisit.treatmentTotalSell = BigDecimal.valueOf(0.00);
+        patientVisit.totalSellForProcedure = BigDecimal.valueOf(0.00);
+        patientVisit.totalCostOfProcedures = BigDecimal.valueOf(0.00);
+        patientVisit.totalCostOfTreatment = BigDecimal.valueOf(0.00);
 
         // Persist visit
         patientVisitRepository.persist(patientVisit);
@@ -241,25 +284,11 @@ public class PatientVisitService {
 
 
     private void updateFinancialFieldsFromInvoice(PatientVisit visit) {
-        // Get the invoice for this visit
-        List<Invoice> invoices = invoiceRepository.find("visit.id = ?1", visit.id).list();
-
-        if (invoices != null && !invoices.isEmpty()) {
-            // Assuming one invoice per visit, get the first one
-            Invoice invoice = invoices.get(0);
-
-            // Update financial fields from invoice
-            visit.balanceDue = invoice.getBalanceDue() != null ? invoice.getBalanceDue() : BigDecimal.ZERO;
-            visit.amountPaid = invoice.getAmountPaid() != null ? invoice.getAmountPaid() : BigDecimal.ZERO;
-            visit.totalAmount = invoice.getTotalAmount() != null ? invoice.getTotalAmount() : BigDecimal.ZERO;
-            visit.subTotal = invoice.getSubTotal() != null ? invoice.getSubTotal() : BigDecimal.ZERO;
-        } else {
-            // No invoice found, set default values
-            visit.balanceDue = BigDecimal.ZERO;
-            visit.amountPaid = BigDecimal.ZERO;
-            visit.totalAmount = BigDecimal.ZERO;
-            visit.subTotal = BigDecimal.ZERO;
+        if (visit == null || visit.id == null) {
+            return;
         }
+        // Recalculate from treatments, procedures, payments — not just copy stored invoice fields.
+        invoiceService.syncInvoiceTotalsForVisit(visit.id);
     }
 
     
@@ -327,6 +356,25 @@ public class PatientVisitService {
         return result;
     }
 
+    /**
+     * Lightweight order/visit rows for pickers (POS Select order, etc.).
+     * Skips nested collections and financial recomputes that make the full list slow.
+     */
+    @Transactional
+    public List<PatientVisitDTO> getVisitSummariesByPatientId(Long patientId) {
+        if (patientId == null || patientId <= 0) {
+            return List.of();
+        }
+        List<PatientVisit> visits = patientVisitRepository
+                .find("patient.id", Sort.by("visitNumber").descending().and("id").descending(), patientId)
+                .list();
+        List<PatientVisitDTO> rows = new ArrayList<>(visits.size());
+        for (PatientVisit visit : visits) {
+            rows.add(PatientVisitDTO.forListRow(visit, null));
+        }
+        return rows;
+    }
+
     @Transactional
     public PatientVisitDTO getPatientVisitByVisitId(Long visitId) {
         return patientVisitRepository.findByIdOptional(visitId)
@@ -340,20 +388,11 @@ public class PatientVisitService {
                 .find("patient.id", Sort.descending("id"), patientId)
                 .firstResult();
 
-        PatientVisitDTO latestVisitDTO;
-
         if (latestVisit == null) {
-            PatientVisitRequest defaultRequest = new PatientVisitRequest();
-            defaultRequest.visitType = "";
-
-
-            // Create a new visit
-            latestVisitDTO = createNewPatientVisit(patientId, defaultRequest);
-        } else {
-            // Convert the found PatientVisit into DTO
-            latestVisitDTO = new PatientVisitDTO(latestVisit);
+            return Response.ok(new ResponseMessage("No visit found for this patient", null)).build();
         }
 
+        PatientVisitDTO latestVisitDTO = new PatientVisitDTO(latestVisit);
         return Response.ok(new ResponseMessage("Patient visit fetched successfully", latestVisitDTO)).build();
     }
 
@@ -464,29 +503,76 @@ public class PatientVisitService {
         if (hasText(request.visitReason)) {
             patientVisit.visitReason = request.visitReason;
         }
-        if (request.patientAge != null) {
-            patientVisit.patientAge = request.patientAge;
+        if (request.goodsDelivered != null) {
+            patientVisit.goodsDelivered = request.goodsDelivered;
         }
-        if (hasText(request.patientAddress)) {
-            patientVisit.patientAddress = request.patientAddress;
+        if (request.deliveryNote != null) {
+            patientVisit.deliveryNote = request.deliveryNote.isBlank() ? null : request.deliveryNote.trim();
         }
-        if (hasText(request.patientContact)) {
-            patientVisit.patientContact = request.patientContact;
+        applyVisitSnapshotFields(
+                patientVisit,
+                request.patientAge,
+                request.patientAddress,
+                request.patientContact,
+                request.occupation,
+                request.nextOfKinName,
+                request.nextOfKinContact,
+                request.relationship,
+                request.nextOfKinAddress
+        );
+    }
+
+    private void applyPatientVisitCreateRequest(PatientVisit patientVisit, PatientVisitRequest request) {
+        if (request == null) {
+            return;
         }
-        if (hasText(request.occupation)) {
-            patientVisit.occupation = request.occupation;
+        applyVisitSnapshotFields(
+                patientVisit,
+                request.patientAge,
+                request.patientAddress,
+                request.patientContact,
+                request.occupation,
+                request.nextOfKinName,
+                request.nextOfKinContact,
+                request.relationship,
+                request.nextOfKinAddress
+        );
+    }
+
+    private void applyVisitSnapshotFields(
+            PatientVisit patientVisit,
+            BigDecimal patientAge,
+            String patientAddress,
+            String patientContact,
+            String occupation,
+            String nextOfKinName,
+            String nextOfKinContact,
+            String relationship,
+            String nextOfKinAddress
+    ) {
+        if (patientAge != null) {
+            patientVisit.patientAge = patientAge;
         }
-        if (hasText(request.nextOfKinName)) {
-            patientVisit.nextOfKinName = request.nextOfKinName;
+        if (hasText(patientAddress)) {
+            patientVisit.patientAddress = patientAddress;
         }
-        if (hasText(request.nextOfKinContact)) {
-            patientVisit.nextOfKinContact = request.nextOfKinContact;
+        if (hasText(patientContact)) {
+            patientVisit.patientContact = patientContact;
         }
-        if (hasText(request.relationship)) {
-            patientVisit.relationship = request.relationship;
+        if (hasText(occupation)) {
+            patientVisit.occupation = occupation;
         }
-        if (hasText(request.nextOfKinAddress)) {
-            patientVisit.nextOfKinAddress = request.nextOfKinAddress;
+        if (hasText(nextOfKinName)) {
+            patientVisit.nextOfKinName = nextOfKinName;
+        }
+        if (hasText(nextOfKinContact)) {
+            patientVisit.nextOfKinContact = nextOfKinContact;
+        }
+        if (hasText(relationship)) {
+            patientVisit.relationship = relationship;
+        }
+        if (hasText(nextOfKinAddress)) {
+            patientVisit.nextOfKinAddress = nextOfKinAddress;
         }
     }
 
@@ -499,9 +585,10 @@ public class PatientVisitService {
         return patientVisitRepository.findByIdOptional(id)
                 .map(patientVisit -> {
 
-                    // If the status to be updated is "open", and userRole is not "md", deny the operation
-                    if ("open".equalsIgnoreCase(request.visitStatus) &&
-                            (request.userRole == null || !request.userRole.equalsIgnoreCase("md"))) {
+                    if ("open".equalsIgnoreCase(request.visitStatus)
+                            && !specialPrivilegeService.hasPrivilege(
+                                    authenticatedUserResolver.requireCurrentUser(),
+                                    SpecialPrivilegeService.Privilege.OPEN_CLOSED_VISIT)) {
 
                         throw new WebApplicationException(
                                 Response.status(Response.Status.BAD_REQUEST)
@@ -518,6 +605,33 @@ public class PatientVisitService {
                     return new PatientVisitDTO(patientVisit);
                 })
                 .orElseThrow(() -> new WebApplicationException("Visit not found", 404));
+    }
+
+    private static boolean isAdminRole(String role) {
+        if (role == null || role.isBlank()) {
+            return false;
+        }
+        String normalized = role.trim().toLowerCase();
+        return "md".equals(normalized)
+                || "admin".equals(normalized)
+                || "administrator".equals(normalized);
+    }
+
+    @Transactional
+    public Response deletePatientVisitById(Long id, String userRole) {
+        if (!isAdminRole(userRole)) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(new ResponseMessage("You need admin rights to delete a visit", null))
+                    .build();
+        }
+        PatientVisit visit = patientVisitRepository.findById(id);
+        if (visit == null) {
+            return Response.status(Response.Status.NOT_FOUND)
+                    .entity(new ResponseMessage("Visit not found", null))
+                    .build();
+        }
+        patientVisitRepository.delete(visit);
+        return Response.ok(new ResponseMessage(ActionMessages.DELETED.label)).build();
     }
 
 
@@ -545,9 +659,13 @@ public class PatientVisitService {
 
         conditions.add("v.patient IS NOT NULL");
 
-        if (request.visitGroup != null && !request.visitGroup.isBlank()) {
-            paramValues.add(request.visitGroup.trim());
-            conditions.add("v.visitGroup = ?" + paramValues.size());
+        Optional<Long> patientGroupId = resolveRequestPatientGroupId(request);
+        if (patientGroupId.isPresent()) {
+            paramValues.add(patientGroupId.get());
+            conditions.add("p.patientGroup.id = ?" + paramValues.size());
+        } else if (hasPatientGroupFilter(request)) {
+            // Group was requested but could not be resolved — no rows match.
+            conditions.add("1 = 0");
         }
         if (request.datefrom != null) {
             paramValues.add(request.datefrom);
@@ -580,8 +698,56 @@ public class PatientVisitService {
                     "EXISTS (SELECT 1 FROM ProcedureRequested pr WHERE pr.visit = v AND (pr.procedureId = ?" + idx
                             + " OR (pr.procedure IS NOT NULL AND pr.procedure.id = ?" + idx + ")))");
         }
+        if (request.ageFrom != null) {
+            paramValues.add(request.ageFrom);
+            conditions.add("COALESCE(v.patientAge, p.patientAge) >= ?" + paramValues.size());
+        }
+        if (request.ageTo != null) {
+            paramValues.add(request.ageTo);
+            conditions.add("COALESCE(v.patientAge, p.patientAge) <= ?" + paramValues.size());
+        }
+        if (request.patientGender != null && !request.patientGender.isBlank()) {
+            paramValues.add(request.patientGender.trim().toLowerCase(Locale.ROOT));
+            conditions.add("LOWER(COALESCE(p.patientGender, '')) = ?" + paramValues.size());
+        }
+        if (request.weightFrom != null || request.weightTo != null) {
+            List<String> weightParts = new ArrayList<>();
+            weightParts.add("itv.visit = v");
+            weightParts.add("itv.weight IS NOT NULL");
+            if (request.weightFrom != null) {
+                paramValues.add(request.weightFrom);
+                weightParts.add("itv.weight >= ?" + paramValues.size());
+            }
+            if (request.weightTo != null) {
+                paramValues.add(request.weightTo);
+                weightParts.add("itv.weight <= ?" + paramValues.size());
+            }
+            conditions.add(
+                    "EXISTS (SELECT 1 FROM InitialTriageVitals itv WHERE "
+                            + String.join(" AND ", weightParts)
+                            + ")");
+        }
+        if (request.treatmentItemId != null && request.treatmentItemId > 0) {
+            paramValues.add(request.treatmentItemId);
+            int idx = paramValues.size();
+            conditions.add(
+                    "EXISTS (SELECT 1 FROM TreatmentRequested tr WHERE tr.visit = v AND tr.itemId = ?" + idx + ")");
+        }
+        if (request.treatmentDrugName != null && !request.treatmentDrugName.isBlank()) {
+            String pattern = "%" + request.treatmentDrugName.trim().toLowerCase(Locale.ROOT) + "%";
+            paramValues.add(pattern);
+            int idx = paramValues.size();
+            conditions.add(
+                    "EXISTS (SELECT 1 FROM TreatmentRequested tr WHERE tr.visit = v AND LOWER(COALESCE(tr.itemName, '')) LIKE ?"
+                            + idx + ")");
+        }
+        if (Boolean.TRUE.equals(request.hasDebt)) {
+            conditions.add("COALESCE(v.balanceDue, 0) > 0");
+        } else if (Boolean.FALSE.equals(request.hasDebt)) {
+            conditions.add("COALESCE(v.balanceDue, 0) <= 0");
+        }
 
-        String jpql = "SELECT DISTINCT v FROM PatientVisit v JOIN v.patient p WHERE "
+        String jpql = "SELECT v FROM PatientVisit v JOIN v.patient p WHERE "
                 + String.join(" AND ", conditions)
                 + " ORDER BY v.visitDate DESC, v.id DESC";
 
@@ -589,22 +755,106 @@ public class PatientVisitService {
         return PatientVisit.find(jpql, args).list();
     }
 
+    private boolean hasPatientGroupFilter(VisitParametersRequest request) {
+        return request.patientGroupId != null && request.patientGroupId > 0
+                || request.visitGroup != null && !request.visitGroup.isBlank();
+    }
+
+    /**
+     * Resolve the registry patient group id from {@code patientGroupId} or legacy {@code visitGroup} text.
+     */
+    private Optional<Long> resolveRequestPatientGroupId(VisitParametersRequest request) {
+        if (request.patientGroupId != null && request.patientGroupId > 0) {
+            PatientGroup byId = patientGroupRepository.findById(request.patientGroupId);
+            if (byId != null && byId.id != null) {
+                return Optional.of(byId.id);
+            }
+            return Optional.of(request.patientGroupId);
+        }
+        if (request.visitGroup == null || request.visitGroup.isBlank()) {
+            return Optional.empty();
+        }
+        String token = request.visitGroup.trim();
+        PatientGroup resolved = patientGroupRepository.findByNormalizedShortForm(token);
+        if (resolved == null) {
+            resolved = patientGroupRepository.findByNormalizedGroupName(token);
+        }
+        if (resolved != null && resolved.id != null) {
+            return Optional.of(resolved.id);
+        }
+        return Optional.empty();
+    }
+
+    private List<PatientVisit> resolveFilteredVisits(VisitParametersRequest request) {
+        return runClinicalCriteriaQuery(request);
+    }
+
     /**
      * Same filtering as {@link #runClinicalCriteriaQuery}; use inside a transaction when mapping to DTOs.
      */
     @Transactional
     public List<PatientVisit> filterVisitsByClinicalCriteria(VisitParametersRequest request) {
-        return runClinicalCriteriaQuery(request);
+        return resolveFilteredVisits(request);
     }
 
     /**
-     * Filtered visits as JSON-serializable DTOs (avoids Hibernate proxy / serialization errors on entities).
+     * Filtered visits as lightweight list DTOs (no nested collections / N+1 financial recomputes).
+     * Needed so multi-month filters do not exhaust the DB connection.
      */
     @Transactional
     public List<PatientVisitDTO> filterVisitsByClinicalCriteriaAsDtos(VisitParametersRequest request) {
-        return runClinicalCriteriaQuery(request).stream()
-                .map(PatientVisitDTO::new)
+        List<PatientVisit> visits = resolveFilteredVisits(request);
+        Map<Long, String> diagnoses = loadPrimaryDiagnosesByVisitId(visits);
+        List<PatientVisitDTO> rows = new ArrayList<>(visits.size());
+        for (PatientVisit visit : visits) {
+            Long visitId = visit != null ? visit.id : null;
+            rows.add(PatientVisitDTO.forListRow(visit, visitId != null ? diagnoses.get(visitId) : null));
+        }
+        return rows;
+    }
+
+    /** One query for all primary diagnoses instead of lazy-loading consultations per visit. */
+    private Map<Long, String> loadPrimaryDiagnosesByVisitId(List<PatientVisit> visits) {
+        Map<Long, String> out = new HashMap<>();
+        if (visits == null || visits.isEmpty()) {
+            return out;
+        }
+        List<Long> ids = visits.stream()
+                .filter(Objects::nonNull)
+                .map(v -> v.id)
+                .filter(Objects::nonNull)
+                .distinct()
                 .collect(Collectors.toList());
+        if (ids.isEmpty()) {
+            return out;
+        }
+        final int chunkSize = 900;
+        for (int i = 0; i < ids.size(); i += chunkSize) {
+            List<Long> chunk = ids.subList(i, Math.min(i + chunkSize, ids.size()));
+            @SuppressWarnings("unchecked")
+            List<Object[]> rows = PatientVisit.getEntityManager()
+                    .createQuery(
+                            "SELECT c.visit.id, c.diagnosis FROM Consultation c "
+                                    + "WHERE c.visit.id IN :ids ORDER BY c.id ASC")
+                    .setParameter("ids", chunk)
+                    .getResultList();
+            for (Object[] row : rows) {
+                if (row == null || row.length < 2 || row[0] == null) {
+                    continue;
+                }
+                Long visitId = ((Number) row[0]).longValue();
+                if (out.containsKey(visitId)) {
+                    continue; // keep first (lowest id) diagnosis
+                }
+                if (row[1] != null) {
+                    String diagnosis = String.valueOf(row[1]).trim();
+                    if (!diagnosis.isEmpty()) {
+                        out.put(visitId, diagnosis);
+                    }
+                }
+            }
+        }
+        return out;
     }
 
     private FullVisitResponse from(Row row){
@@ -653,7 +903,6 @@ public class PatientVisitService {
 
 
 
-        // Convert to DTOs
         List<PatientVisitDTO> patientVisitDTOs = filteredVisits.stream()
                 .map(PatientVisitDTO::new)
                 .collect(Collectors.toList());
@@ -676,9 +925,15 @@ public class PatientVisitService {
     ) {}
 
     @Transactional
+    public Response generateAndReturnCompassionGroupInvoiceDocx(VisitParametersRequest request) {
+        List<PatientVisit> filteredVisits = resolveFilteredVisits(request);
+        return compassionGroupInvoiceDocxService.generateDocx(request, filteredVisits);
+    }
+
+    @Transactional
     public Response generateAndReturnInvoicePdfForListOfCompassionPatients(VisitParametersRequest request) {
         try {
-            List<PatientVisit> filteredVisits = runClinicalCriteriaQuery(request);
+            List<PatientVisit> filteredVisits = resolveFilteredVisits(request);
 
             calculateFinancialTotals(filteredVisits);
 
@@ -698,7 +953,7 @@ public class PatientVisitService {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             PdfWriter pdfWriter = new PdfWriter(baos);
             PdfDocument pdfDocument = new PdfDocument(pdfWriter);
-            pdfDocument.addEventHandler(PdfDocumentEvent.END_PAGE, new FooterHelperInvoice());
+            pdfDocument.addEventHandler(PdfDocumentEvent.END_PAGE, new FooterHelperInvoice(facilityBranding()));
 
             Document document = new Document(pdfDocument);
             document.setMargins(36, 36, 90, 36);
@@ -718,7 +973,7 @@ public class PatientVisitService {
                                     .setTextAlignment(TextAlignment.CENTER)
                             )
                     )
-                    .add(new Paragraph("Department of Finance - Veneranda Medical (A subsidiary of Veneranda Hospital)")
+                    .add(new Paragraph(facilityBranding().financeHeaderLine())
                             .setFontSize(7)
                             //.setItalic()
                             .setMarginTop(3)
@@ -982,26 +1237,8 @@ public class PatientVisitService {
         return cell;
     }
 
-    public static Image getLogo() {
-        try {
-            // Load the image as a stream from the classpath
-            InputStream logoStream = Thread.currentThread().getContextClassLoader().getResourceAsStream("logo.png");
-
-            if (logoStream == null) {
-                throw new RuntimeException("Logo image not found in classpath.");
-            }
-
-            byte[] imageBytes = logoStream.readAllBytes(); // Java 9+; use IOUtils for Java 8
-            ImageData imageData = ImageDataFactory.create(imageBytes);
-
-            Image logo = new Image(imageData);
-            logo.scaleToFit(80, 80);
-            logo.setHorizontalAlignment(HorizontalAlignment.CENTER);
-
-            return logo;
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to load the logo image.", e);
-        }
+    private Image getLogo() {
+        return facilityPdfLogoService.createLogoImage();
     }
 
 

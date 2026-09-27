@@ -26,23 +26,60 @@ public class Initializer {
     ActivationTokenRepository activationTokenRepository;
 
     @Transactional
-    public void initUser(@Observes StartupEvent ev){
-
-        boolean adminExists = userRepository.usernameExists("vmd") ||
-                             userRepository.findByEmailOptional("md@vmd.com").isPresent();
-
-        if (!adminExists){
-            User adminUser = new User();
-            adminUser.username = "vmd";
-            adminUser.profilePic = "";
-            adminUser.role = "md";
-            adminUser.email = "md@vmd.com";
-            adminUser.password = BcryptUtil.bcryptHash("password@vmd.com");
-            adminUser.persist();
-        }
-
+    public void initUser(@Observes StartupEvent ev) {
+        ensureDefaultAdminUser();
+        // Only seed catalog defaults on a fresh-ish DB (idempotent helpers below).
         seedAdjustmentTypesIfMissing();
         seedDemoActivationTokenIfMissing();
+    }
+
+    /**
+     * Ensure the documented local admin account exists.
+     * Never overwrite password (or other credentials) on an existing user — that wiped
+     * profile password changes whenever Quarkus restarted / live-reloaded.
+     */
+    private void ensureDefaultAdminUser() {
+        final String email = "md@vmd.com";
+        final String username = "vmd";
+        final String plainPassword = "password@vmd.com";
+
+        User existing = userRepository.findByEmailOptional(email).orElse(null);
+        if (existing == null) {
+            existing = userRepository.findByUsernameOptional(username).orElse(null);
+        }
+        if (existing != null) {
+            boolean dirty = false;
+            if (existing.email == null || existing.email.isBlank()) {
+                existing.email = email;
+                dirty = true;
+            }
+            if (existing.username == null || existing.username.isBlank()) {
+                existing.username = username;
+                dirty = true;
+            }
+            if (existing.role == null || existing.role.isBlank()) {
+                existing.role = "md";
+                dirty = true;
+            }
+            if (existing.status == null || existing.status.isBlank()) {
+                existing.status = "active";
+                dirty = true;
+            }
+            if (dirty) {
+                userRepository.persist(existing);
+            }
+            return;
+        }
+
+        // Fresh DB: create the default admin once.
+        User adminUser = new User();
+        adminUser.username = username;
+        adminUser.profilePic = "";
+        adminUser.role = "md";
+        adminUser.status = "active";
+        adminUser.email = email;
+        adminUser.password = BcryptUtil.bcryptHash(plainPassword);
+        adminUser.persist();
     }
 
     private void seedAdjustmentTypesIfMissing() {

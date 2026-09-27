@@ -28,7 +28,7 @@ import org.example.inventory.item.services.payloads.responses.basicResponses.Low
 import org.example.inventory.item.services.payloads.responses.basicResponses.RouteOfAdminResponse;
 import org.example.inventory.item.services.payloads.responses.dtos.LowestPackageDTO;
 
-@Path("/Hospital-item")
+@Path("/Business-item")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 @Tag(name = "Hospital Management Module", description = "Hospital Management")

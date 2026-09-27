@@ -19,10 +19,10 @@ import org.example.inventory.store.services.payloads.responses.dtos.StoreDTO;
 import org.example.inventory.store.services.payloads.requests.StoreRequest;
 import org.example.inventory.store.services.StoreService;
 
-@Path("Patient-management")
+@Path("Client-management")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-@Tag(name = "Patient Management Module", description = "Patient Management")
+@Tag(name = "Client Management Module", description = "Client Management")
 
 public class StoreController {
 

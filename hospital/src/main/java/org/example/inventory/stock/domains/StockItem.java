@@ -86,6 +86,26 @@ public class StockItem extends PanacheEntity {
     @Column
     public String lastUnitOfPrescribingMeasureStrengthUnitTitle;
 
+    /** Prescription period basis: DAY, WEEK, MONTH, BODY_WEIGHT */
+    @Column
+    public String prescribingPeriodBasis;
+
+    /** JSON dosage templates for body weight / neonate / pediatric / adult */
+    @Column(columnDefinition = "TEXT")
+    public String prescribingDosageJson;
+
+    /** FIXED_INTERVAL or CUSTOM_HOURS */
+    @Column
+    public String prescribingFrequencyMode;
+
+    /** OD, BD, TDS, QID, etc. when mode is FIXED_INTERVAL */
+    @Column
+    public String prescribingFrequencyFixed;
+
+    /** Comma-separated hours e.g. 0,12,24 when mode is CUSTOM_HOURS */
+    @Column
+    public String prescribingFrequencyCustomHours;
+
     //others
 
 
@@ -95,6 +115,69 @@ public class StockItem extends PanacheEntity {
 
     @Column(columnDefinition = "TEXT")
     public String image;
+
+    @Column(columnDefinition = "TEXT")
+    public String image2;
+
+    @Column(columnDefinition = "TEXT")
+    public String image3;
+
+    /** Local folder URL for primary image (served from PC product-images folder). */
+    @Column(columnDefinition = "TEXT")
+    public String imageLocal;
+
+    @Column(columnDefinition = "TEXT")
+    public String imageLocal2;
+
+    @Column(columnDefinition = "TEXT")
+    public String imageLocal3;
+
+    /** Accepted barcodes (comma-separated), separate from internal sku. */
+    @Column(columnDefinition = "TEXT")
+    public String barcode;
+
+    /** Primary product code / SKU. */
+    @Column
+    public String sku;
+
+    @Column
+    public String shelfNumber;
+
+    /** Business category label (e.g. Supermarket, Hardware). */
+    @Column
+    public String businessCategory;
+
+    /** Sale category label (e.g. Retail, Wholesale, Service). */
+    @Column
+    public String saleCategory;
+
+    @Column
+    public String unit;
+
+    @Column
+    public String unitShort;
+
+    @Column
+    public BigDecimal costPrice;
+
+    @Column
+    public BigDecimal sellingPrice;
+
+    /**
+     * When true (default), selling price is fixed via unit selling models.
+     * When false, price is open and may be set at point of sale.
+     */
+    @Column
+    public Boolean useUnitSellingModel;
+
+    @Column
+    public BigDecimal stockQty;
+
+    @Column
+    public BigDecimal reorderLevel;
+
+    @Column
+    public BigDecimal restockTo;
 
     @Column(columnDefinition = "TEXT")
     public String contraIndication;

@@ -19,7 +19,7 @@ import org.example.inventory.stock.services.payloads.requests.StockBatchRequest;
 import org.example.inventory.stock.services.payloads.responses.dtos.StockBatchDTO;
 import org.example.inventory.stock.services.payloads.responses.dtos.StockReceiveDTO;
 
-@Path("/Hospital-item")
+@Path("/Business-item")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 @Tag(name = "Hospital Management Module", description = "Hospital Management")

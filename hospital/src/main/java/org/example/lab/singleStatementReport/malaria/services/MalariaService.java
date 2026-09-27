@@ -1,6 +1,6 @@
 package org.example.lab.singleStatementReport.malaria.services;
 
-import io.vertx.mutiny.mysqlclient.MySQLPool;
+import io.vertx.mutiny.sqlclient.Pool;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
@@ -27,7 +27,7 @@ public class MalariaService {
     ProcedureRequestedRepository procedureRequestedRepository;
 
     @Inject
-    MySQLPool client;
+    Pool client;
 
     @Transactional
     public void createMrdtReport(ProcedureRequested procedureRequested){

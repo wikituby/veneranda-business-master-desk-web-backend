@@ -12,6 +12,9 @@ public class GeneralLabReportUpdateRequest {
     @Schema(example = "Negative")
     public String result;
 
+    @Schema(example = "Uncomplicated antenatal visit")
+    public String labReportTitle;
+
     @Schema(example = "No abnormalities detected")
     public String notes;
 }

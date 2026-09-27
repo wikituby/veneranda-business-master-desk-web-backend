@@ -38,6 +38,9 @@ public class ConsultationDTO {
     public LocalDate creationDate;  // Creation date
     public LocalDate updateDate;  // Update date
     public List<ComplaintDTO> complaints;  // List of complaints associated with this consultation
+    public List<PresentingComplaintDTO> presentingComplaints;  // Structured presenting complaints
+    public List<PhysicalExaminationDTO> physicalExaminations;  // Structured physical examinations
+    public List<DiagnosisDTO> diagnoses;   // Structured diagnoses (each may include linked treatments)
 
     public ConsultationDTO(Consultation consultation) {
         this.id = consultation.id;
@@ -71,6 +74,15 @@ public class ConsultationDTO {
         this.updateDate = consultation.updateDate;
         this.complaints = consultation.complaints != null 
             ? consultation.complaints.stream().map(ComplaintDTO::new).collect(Collectors.toList())
+            : List.of();
+        this.presentingComplaints = consultation.presentingComplaints != null
+            ? consultation.presentingComplaints.stream().map(PresentingComplaintDTO::new).collect(Collectors.toList())
+            : List.of();
+        this.physicalExaminations = consultation.physicalExaminations != null
+            ? consultation.physicalExaminations.stream().map(PhysicalExaminationDTO::new).collect(Collectors.toList())
+            : List.of();
+        this.diagnoses = consultation.diagnoses != null
+            ? consultation.diagnoses.stream().map(DiagnosisDTO::new).collect(Collectors.toList())
             : List.of();
     }
 }

@@ -33,6 +33,10 @@ public class Procedure extends PanacheEntity {
     @Column
     public BigDecimal unitSellingPrice;
 
+    /** Selected unit selling model for this service. */
+    @Column
+    public Long unitSellingModelId;
+
 
 
 

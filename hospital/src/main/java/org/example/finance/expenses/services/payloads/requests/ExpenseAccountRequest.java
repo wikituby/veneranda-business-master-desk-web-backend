@@ -11,6 +11,12 @@ public class ExpenseAccountRequest {
 
     @Schema(example = "Account for office supplies expenses")
     public String description;
+
+    @Schema(example = "1000000")
+    public java.math.BigDecimal accountLimit;
+
+    @Schema(example = "MONTHLY")
+    public String limitPeriod;
 }
 
 

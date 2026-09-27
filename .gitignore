@@ -1,8 +1,24 @@
-/shopitems/static/error-logs/2023-09-03-log.txt
-/shopitems/static/error-logs/2023-09-02-log.txt
-/shopitems/static/error-logs/2023-09-13-log.txt
-/shopitems/static/error-logs/2023-09-11-log.txt
-/shopitems/static/error-logs/2023-09-14-log.txt
-/shopitems/static/error-logs/2023-09-12-log.txt
-/shopitems/static/error-logs/2023-09-08-log.txt
-/shopitems/static/error-logs/2023-09-15-log.txt
+# Build
+**/target/
+hospital/target/
+
+# Logs
+*.log
+logs/
+backend*.log
+build.log
+**/static/error-logs/
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Local secrets / env dumps
+.env
+.env.*
+render-db.json

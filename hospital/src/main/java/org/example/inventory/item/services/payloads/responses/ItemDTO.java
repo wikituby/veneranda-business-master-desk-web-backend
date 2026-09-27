@@ -1,8 +1,7 @@
 package org.example.inventory.item.services.payloads.responses;
 
-import org.example.inventory.item.domain.Item;
-
 import java.math.BigDecimal;
+import org.example.inventory.item.domain.Item;
 
 public class ItemDTO {
     public Long id;
@@ -17,14 +16,13 @@ public class ItemDTO {
     public String description;
     public BigDecimal costPrice;
     public BigDecimal sellingPrice;
+    public Long unitSellingModelId;
     public String unitOfMeasure;
     public String lastUnitOfMeasure;
     public BigDecimal lastUnitValue;
-
     public Integer reOrderLevel;
     public BigDecimal stockAtHand;
     public Integer reOrderTo;
-
     public BigDecimal dosage;
     public String dosageUnit;
     public BigDecimal frequency;
@@ -33,12 +31,9 @@ public class ItemDTO {
     public String durationUnit;
     public String route;
 
-
     public ItemDTO(Item item) {
         this.id = item.id;
         this.reOrderTo = item.reOrderTo;
-        //this.reOrderLevel = item.reOrderTo.subtract(item.stockAtHand);
-        
         this.shelfNumber = item.shelfNumber;
         this.stockAtHand = item.stockAtHand;
         this.number = item.number;
@@ -51,6 +46,7 @@ public class ItemDTO {
         this.description = item.description;
         this.costPrice = item.costPrice;
         this.sellingPrice = item.sellingPrice;
+        this.unitSellingModelId = item.unitSellingModelId;
         this.unitOfMeasure = item.unitOfMeasure;
         this.lastUnitOfMeasure = item.lastUnitOfMeasure;
         this.lastUnitValue = item.lastUnitValue;
@@ -61,13 +57,6 @@ public class ItemDTO {
         this.duration = item.duration;
         this.durationUnit = item.durationUnit;
         this.route = item.route;
-
-        BigDecimal reorderTo = item.reOrderTo != null ? BigDecimal.valueOf(item.reOrderTo) : BigDecimal.ZERO;
-        BigDecimal stock = item.stockAtHand != null ? item.stockAtHand : BigDecimal.ZERO;
-        
-        this.reOrderLevel = reorderTo.subtract(stock).intValue();
-
+        this.reOrderLevel = item.reOrderLevel;
     }
 }
-
-

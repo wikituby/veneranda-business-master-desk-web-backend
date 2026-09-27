@@ -19,10 +19,10 @@ import org.example.vitals.services.payloads.responses.VitalsMonitoringChartDTO;
 import org.example.vitals.services.payloads.requests.VitalsMonitoringChartRequest;
 import org.example.vitals.services.VitalsMonitoringChartService;
 
-@Path("Patient-management")
+@Path("Client-management")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-@Tag(name = "Patient Management Module", description = "Patient Management")
+@Tag(name = "Client Management Module", description = "Client Management")
 
 public class VitalsMonitoringChartController {
 

@@ -28,7 +28,17 @@ public class StockBatchRequest {
 
 
     public Long stockSupplierId;
+
+    public Long purchaseOrderId;
+    public String purchaseOrderNo;
   
     public BigDecimal quantityReceived;
+
+    public BigDecimal profitMarginForRetail;
+    public BigDecimal profitMarginForWholeSale;
+    public BigDecimal profitMarginForSpecialCase;
+
+    /** Unit selling model applied on this receive (price taken from model). */
+    public Long unitSellingModelId;
 
 }

@@ -22,6 +22,9 @@ public class StockItemDTO {
     public String reconstitutionUnitTitle;
     public Long itemCategoryId;
     public String itemCategoryName;
+    /** Top-most parent category (e.g. Drug when leaf is Antibiotic). */
+    public Long lastCategoryId;
+    public String lastCategoryName;
     public Long routeOfAdminId;
     public String routeOfAdminTitle;
     
@@ -34,10 +37,35 @@ public class StockItemDTO {
     // Prescribing units
     public Long lastUnitOfPrescribingMeasureStrengthUnit;
     public String lastUnitOfPrescribingMeasureStrengthUnitTitle;
+    public String prescribingPeriodBasis;
+    public String prescribingDosageJson;
+    public String prescribingFrequencyMode;
+    public String prescribingFrequencyFixed;
+    public String prescribingFrequencyCustomHours;
     
     // Others - medical information fields
     public String indication;
+    public java.util.List<StockItemIndicationDTO> indications;
     public String image;
+    public String image2;
+    public String image3;
+    public String imageLocal;
+    public String imageLocal2;
+    public String imageLocal3;
+    public String barcode;
+    public String sku;
+    public String shelfNumber;
+    public String businessCategory;
+    public String saleCategory;
+    public String unit;
+    public String unitShort;
+    public BigDecimal costPrice;
+    public BigDecimal sellingPrice;
+    /** true = fixed via unit sell model; false = open price at sale. Null treated as true. */
+    public Boolean useUnitSellingModel;
+    public BigDecimal stockQty;
+    public BigDecimal reorderLevel;
+    public BigDecimal restockTo;
     public String contraIndication;
     public String drugIteractions;
     public String description;
@@ -84,10 +112,33 @@ public class StockItemDTO {
         // Prescribing units
         this.lastUnitOfPrescribingMeasureStrengthUnit = entity.lastUnitOfPrescribingMeasureStrengthUnit;
         this.lastUnitOfPrescribingMeasureStrengthUnitTitle = entity.lastUnitOfPrescribingMeasureStrengthUnitTitle;
+        this.prescribingPeriodBasis = entity.prescribingPeriodBasis;
+        this.prescribingDosageJson = entity.prescribingDosageJson;
+        this.prescribingFrequencyMode = entity.prescribingFrequencyMode;
+        this.prescribingFrequencyFixed = entity.prescribingFrequencyFixed;
+        this.prescribingFrequencyCustomHours = entity.prescribingFrequencyCustomHours;
         
         // Others - medical information fields
         this.indication = entity.indication;
         this.image = entity.image;
+        this.image2 = entity.image2;
+        this.image3 = entity.image3;
+        this.imageLocal = entity.imageLocal;
+        this.imageLocal2 = entity.imageLocal2;
+        this.imageLocal3 = entity.imageLocal3;
+        this.barcode = entity.barcode;
+        this.sku = entity.sku;
+        this.shelfNumber = entity.shelfNumber;
+        this.businessCategory = entity.businessCategory;
+        this.saleCategory = entity.saleCategory;
+        this.unit = entity.unit;
+        this.unitShort = entity.unitShort;
+        this.costPrice = entity.costPrice;
+        this.sellingPrice = entity.sellingPrice;
+        this.useUnitSellingModel = entity.useUnitSellingModel == null || Boolean.TRUE.equals(entity.useUnitSellingModel);
+        this.stockQty = entity.stockQty;
+        this.reorderLevel = entity.reorderLevel;
+        this.restockTo = entity.restockTo;
         this.contraIndication = entity.contraIndication;
         this.drugIteractions = entity.drugIteractions;
         this.description = entity.description;

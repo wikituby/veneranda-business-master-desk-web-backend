@@ -1,0 +1,2 @@
+﻿# Quarkus build analytics disabled for local VBM,dev
+quarkus.analytics.disabled=true

@@ -23,6 +23,9 @@ public class ProcedureUpdateRequest {
     @Schema(example = "5000")
     public BigDecimal unitSellingPrice;
 
+    @Schema(example = "1")
+    public Long unitSellingModelId;
+
     @Schema(example = "3000")
     public BigDecimal unitCostPrice;
 }

@@ -19,10 +19,10 @@ import org.example.admissions.services.InPatientTreatmentService;
 import org.example.configuration.handler.ResponseMessage;
 import org.example.statics.StatusTypes;
 
-@Path("Patient-management")
+@Path("Client-management")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-@Tag(name = "Patient Management Module", description = "Patient Management")
+@Tag(name = "Client Management Module", description = "Client Management")
 
 public class InPatientTreatmentController {
 

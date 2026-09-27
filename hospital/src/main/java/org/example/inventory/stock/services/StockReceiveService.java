@@ -1,7 +1,7 @@
 package org.example.inventory.stock.services;
 
 import io.quarkus.panache.common.Sort;
-import io.vertx.mutiny.mysqlclient.MySQLPool;
+import io.vertx.mutiny.sqlclient.Pool;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
@@ -19,12 +19,14 @@ import org.example.inventory.stock.domains.repositories.StockItemRepository;
 import org.example.inventory.stock.domains.repositories.StockReceiveRepository;
 import org.example.inventory.stock.domains.repositories.StockSupplierRepository;
 import org.example.inventory.stock.services.StockTrackingService;
+import org.example.inventory.stock.services.UnitSellingModelService;
 import org.example.inventory.stock.services.payloads.requests.StockBatchRequest;
 import org.example.inventory.stock.services.payloads.responses.dtos.StockReceiveDTO;
 import org.example.inventory.store.domains.Store;
 import org.example.inventory.store.domains.repositories.StoreRepository;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -56,15 +58,34 @@ public class StockReceiveService {
     StockTrackingService stockTrackingService;
 
     @Inject
-    MySQLPool client;
+    Pool client;
 
     @Inject
     EntityManager entityManager;
+
+    @Inject
+    UnitSellingModelService unitSellingModelService;
 
     public static final String INVALID_REQUEST = "Invalid request data!";
 
     @Transactional
     public Response receiveStock(StockBatchRequest request) {
+
+        if (request == null) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(new ResponseMessage(INVALID_REQUEST, null))
+                    .build();
+        }
+        if (request.storeId == null) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(new ResponseMessage("Store is required", null))
+                    .build();
+        }
+        if (request.stockItemId == null) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(new ResponseMessage("Stock item is required", null))
+                    .build();
+        }
 
         Store store = storeRepository.findById(request.storeId);
         if (store == null) {
@@ -80,11 +101,26 @@ public class StockReceiveService {
                     .build();
         }
 
-        StockSupplier stockSupplier = stockSupplierRepository.findById(request.stockSupplierId);
+        StockSupplier stockSupplier = resolveSupplier(request.stockSupplierId);
         if (stockSupplier == null) {
-            return Response.status(Response.Status.NOT_FOUND)
-                    .entity(new ResponseMessage("Stock supplier not found", null))
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(new ResponseMessage("Could not resolve a stock supplier for this receive", null))
                     .build();
+        }
+        request.stockSupplierId = stockSupplier.id;
+
+        request.unitCostPrice = money(request.unitCostPrice);
+        request.unitSellingPrice = money(request.unitSellingPrice);
+        request.totalCostPrice = money(request.totalCostPrice);
+
+        if (request.unitSellingModelId != null) {
+            request.unitSellingPrice = unitSellingModelService.resolveUnitSellingPrice(
+                    request.stockItemId,
+                    request.unitSellingModelId,
+                    request.unitSellingPrice
+            );
+        } else {
+            unitSellingModelService.ensureModelsForStockItem(request.stockItemId, request.unitCostPrice);
         }
 
         StockBatch stockBatch = stockBatchRepository.find(
@@ -104,6 +140,7 @@ public class StockReceiveService {
             stockBatch.batchNumber = request.batchNumber;
             stockBatch.unitCostPrice = request.unitCostPrice;
             stockBatch.unitSellingPrice = request.unitSellingPrice;
+            stockBatch.unitSellingModelId = request.unitSellingModelId;
             stockBatch.stockAtHand = request.quantityReceived;
             stockBatch.stockSupplierName = stockSupplier.supplierName;
             stockBatch.stockSupplierId = stockSupplier.id;
@@ -123,16 +160,21 @@ public class StockReceiveService {
             stockBatch.lastUnitOfMeasure = request.unitOfMeasure;
             stockBatch.packaging = request.packaging;
             stockBatch.creationDateAndTime = LocalDateTime.now();
+            applyProfitMargins(stockBatch, request);
 
             stockBatch.persist();
         } else {
             oldStockAtHand = stockBatch.stockAtHand;
 
-            if (request.unitCostPrice.compareTo(stockBatch.unitCostPrice) > 0) {
-                BigDecimal diff = request.unitCostPrice.subtract(stockBatch.unitCostPrice);
-                stockBatch.unitSellingPrice = stockBatch.unitSellingPrice.add(diff);
-                stockBatch.unitCostPrice = request.unitCostPrice;
+            stockBatch.unitCostPrice = request.unitCostPrice;
+            if (request.unitSellingPrice != null
+                    && request.unitSellingPrice.compareTo(BigDecimal.ZERO) > 0) {
+                stockBatch.unitSellingPrice = request.unitSellingPrice;
             }
+            if (request.unitSellingModelId != null) {
+                stockBatch.unitSellingModelId = request.unitSellingModelId;
+            }
+            applyProfitMargins(stockBatch, request);
 
             stockBatch.stockAtHand = stockBatch.stockAtHand.add(request.quantityReceived);
             stockBatch.lastUnitOfMeasure = request.unitOfMeasure;
@@ -157,6 +199,8 @@ public class StockReceiveService {
         stockReceive.supplierId = stockSupplier.id;
         stockReceive.invoiceNumber = request.invoiceNumber;
         stockReceive.batchNumber = request.batchNumber;
+        stockReceive.purchaseOrderId = request.purchaseOrderId;
+        stockReceive.purchaseOrderNo = request.purchaseOrderNo;
         stockReceive.packaging = request.packaging;
         stockReceive.expiryDate = request.expiryDate;
         stockReceive.persist();
@@ -227,4 +271,61 @@ public class StockReceiveService {
 
         return Response.ok(new ResponseMessage(
                 "Stock Receive deleted successfully, and stock at hand updated in the store", null)).build();
-    }}
+    }
+
+    private void applyProfitMargins(StockBatch stockBatch, StockBatchRequest request) {
+        if (request.profitMarginForRetail != null) {
+            stockBatch.profitMarginForRetail = money(request.profitMarginForRetail);
+        } else if (request.unitSellingPrice != null && request.unitCostPrice != null) {
+            stockBatch.profitMarginForRetail = money(
+                    request.unitSellingPrice.subtract(request.unitCostPrice).max(BigDecimal.ZERO));
+        }
+        if (request.profitMarginForWholeSale != null) {
+            stockBatch.profitMarginForWholeSale = money(request.profitMarginForWholeSale);
+        }
+        if (request.profitMarginForSpecialCase != null) {
+            stockBatch.profitMarginForSpecialCase = money(request.profitMarginForSpecialCase);
+        }
+    }
+
+    /**
+     * POS / quick receive may omit supplier. Prefer the requested id, else an existing
+     * Direct/POS supplier, else any supplier, else create "Direct purchase".
+     */
+    private StockSupplier resolveSupplier(Long stockSupplierId) {
+        if (stockSupplierId != null) {
+            StockSupplier named = stockSupplierRepository.findById(stockSupplierId);
+            if (named != null) {
+                return named;
+            }
+        }
+
+        java.util.Set<String> preferredNames = java.util.Set.of(
+                "direct purchase", "direct", "pos", "walk-in", "walk in");
+        List<StockSupplier> all = stockSupplierRepository.listAll(Sort.ascending("id"));
+        for (StockSupplier s : all) {
+            String name = s.supplierName == null ? "" : s.supplierName.trim().toLowerCase();
+            if (preferredNames.contains(name)) {
+                return s;
+            }
+        }
+        if (!all.isEmpty()) {
+            return all.get(0);
+        }
+
+        StockSupplier created = new StockSupplier();
+        created.supplierName = "Direct purchase";
+        created.description = "Auto-created for POS / quick stock receive";
+        created.creationDateTime = LocalDateTime.now();
+        stockSupplierRepository.persist(created);
+        return created;
+    }
+
+    /** Store money fields to 2 decimal places so 200 is not saved as 199.9 from float drift. */
+    private static BigDecimal money(BigDecimal value) {
+        if (value == null) {
+            return BigDecimal.ZERO;
+        }
+        return value.setScale(2, RoundingMode.HALF_UP);
+    }
+}

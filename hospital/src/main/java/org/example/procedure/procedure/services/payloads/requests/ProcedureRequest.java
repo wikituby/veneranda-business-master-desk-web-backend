@@ -22,6 +22,12 @@ public class ProcedureRequest {
     @Schema(example = "5000")
     public BigDecimal unitSellingPrice;
 
+    @Schema(example = "1")
+    public Long unitSellingModelId;
+
+    @Schema(description = "Initial unit selling model when creating a new service")
+    public org.example.inventory.stock.services.payloads.requests.UnitSellingModelRequest initialUnitSellingModel;
+
     @Schema(example = "3000")
     public BigDecimal unitCostPrice;
 }

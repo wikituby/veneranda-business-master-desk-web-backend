@@ -48,6 +48,22 @@ public class ExpenseAccountController {
         List<ExpenseAccountDto> expenseAccountDto = expenseAccountService.getAllExpenseAccount();
         return Response.ok(new ResponseMessage(ActionMessages.FETCHED.label, expenseAccountDto)).build();
     }
+
+    @PUT
+    @Path("update-expense-account/{id}")
+    @Transactional
+    @Operation(summary = "Update expense account", description = "Update an existing expense account")
+    public Response updateExpenseAccount(@PathParam("id") Long id, ExpenseAccountRequest request) {
+        return expenseAccountService.updateExpenseAccount(id, request);
+    }
+
+    @DELETE
+    @Path("delete-expense-account/{id}")
+    @Transactional
+    @Operation(summary = "Delete expense account", description = "Delete an expense account by ID")
+    public Response deleteExpenseAccount(@PathParam("id") Long id) {
+        return expenseAccountService.deleteExpenseAccount(id);
+    }
 }
 
 

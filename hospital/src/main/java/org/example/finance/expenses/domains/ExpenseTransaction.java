@@ -6,17 +6,15 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
-import org.example.user.domains.User;
-
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
 
 @Entity
 public class ExpenseTransaction extends PanacheEntity {
-    @ManyToOne
-    @JoinColumn(nullable = false)
-    public User user;
+    /** FK to {@code user} table (same as {@link org.example.user.domains.User}). */
+    @Column(name = "user_id", nullable = false)
+    public Long userId;
 
     @ManyToOne
     @JoinColumn(nullable = false)

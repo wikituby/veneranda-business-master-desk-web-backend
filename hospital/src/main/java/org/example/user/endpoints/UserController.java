@@ -32,8 +32,12 @@ import org.example.user.services.UserService;
 import org.example.user.services.payLoads.requests.AgentUserRequest;
 import org.example.user.services.payLoads.requests.UpdateAgentRole;
 import org.example.user.services.payLoads.requests.UpdateProfilePicRequest;
+import org.example.user.services.payLoads.requests.CreateRoleRequest;
 import org.example.user.services.payLoads.requests.UpdateRequest;
+import org.example.user.services.payLoads.requests.UpdateRoleNameRequest;
+import org.example.user.services.payLoads.requests.UpdateUiPreferencesRequest;
 import org.example.user.services.payLoads.requests.UserRequest;
+import org.example.user.services.RoleService;
 
 @Path("user-management")
 @Produces(MediaType.APPLICATION_JSON)
@@ -51,6 +55,9 @@ public class UserController {
         @Inject
         UserAuthService userAuthService;
 
+        @Inject
+        RoleService roleService;
+
         @POST
         @Path("signup")
         @Transactional
@@ -58,6 +65,15 @@ public class UserController {
         @APIResponse(description = "Successful", responseCode = "200", content = @Content(schema = @Schema(implementation = User.class)))
         public Response createUser(UserRequest request){
             return Response.ok(new ResponseMessage(StatusTypes.CREATED.label,userService.createNewCustomerUser(request) )).build();
+        }
+
+        @POST
+        @Path("create-user")
+        @Transactional
+        @Operation(summary = "Create user and return all users", description = "Create user and return all users")
+        @APIResponse(description = "Successful", responseCode = "200", content = @Content(schema = @Schema(implementation = User.class,type = SchemaType.ARRAY)))
+        public Response createUserAndListAll(UserRequest request){
+            return Response.ok(new ResponseMessage(StatusTypes.CREATED.label, userService.createNewCustomerUserAndListAll(request))).build();
         }
 
         @GET
@@ -86,6 +102,20 @@ public class UserController {
         @APIResponse(description = "Successful", responseCode = "200", content = @Content(schema = @Schema(implementation = User.class)))
         public Response updateProfilePic(@PathParam("id") Long id, UpdateProfilePicRequest request){
                 return Response.ok(new ResponseMessage(ActionMessages.UPDATED.label,userService.updateProfilePicById(request, id))).build();
+        }
+
+        @PUT
+        @Path("update-ui-preferences/{id}")
+        @Transactional
+        @Operation(
+                summary = "Update user UI preferences",
+                description = "Save locked UI defaults such as registry items-per-page")
+        @APIResponse(description = "Successful", responseCode = "200", content = @Content(schema = @Schema(implementation = User.class)))
+        public Response updateUiPreferences(@PathParam("id") Long id, UpdateUiPreferencesRequest request) {
+                Integer size = request == null ? null : request.registryItemsPerPage;
+                return Response.ok(new ResponseMessage(
+                        ActionMessages.UPDATED.label,
+                        userService.updateRegistryItemsPerPage(id, size))).build();
         }
 
         @PUT
@@ -190,12 +220,49 @@ public class UserController {
 
         @GET
         @Path("get-all-roles")
-        @RolesAllowed({"ADMIN"})
+        @Transactional
         @Operation(summary = "get all roles", description = "get all roles")
         @APIResponse(description = "Successful", responseCode = "200", content = @Content(schema = @Schema(implementation = RoleResponse.class)))
         public Response role() {
                 return Response.ok(new ResponseMessage(ActionMessages.FETCHED.label, userService.getAllRoles())).build();
+        }
 
+        @POST
+        @Path("create-role")
+        @Transactional
+        @Operation(summary = "Create role", description = "Create a new role")
+        @APIResponse(description = "Successful", responseCode = "200", content = @Content(schema = @Schema(implementation = RoleResponse.class)))
+        public Response createRole(CreateRoleRequest request) {
+                return Response.ok(new ResponseMessage(
+                        StatusTypes.CREATED.label,
+                        roleService.createRole(request != null ? request.name : null)
+                )).build();
+        }
+
+        @PUT
+        @Path("update-role")
+        @Transactional
+        @Operation(summary = "Update role", description = "Rename a role and update users assigned to it")
+        @APIResponse(description = "Successful", responseCode = "200", content = @Content(schema = @Schema(implementation = RoleResponse.class)))
+        public Response updateRole(UpdateRoleNameRequest request) {
+                String oldName = request != null ? request.oldName : null;
+                String newName = request != null ? request.newName : null;
+                return Response.ok(new ResponseMessage(
+                        ActionMessages.UPDATED.label,
+                        roleService.updateRole(oldName, newName)
+                )).build();
+        }
+
+        @DELETE
+        @Path("delete-role/{role}")
+        @Transactional
+        @Operation(summary = "Delete role", description = "Delete a role when no users are assigned to it")
+        @APIResponse(description = "Successful", responseCode = "200", content = @Content(schema = @Schema(implementation = RoleResponse.class)))
+        public Response deleteRole(@PathParam("role") String role) {
+                return Response.ok(new ResponseMessage(
+                        ActionMessages.DELETED.label,
+                        roleService.deleteRole(role)
+                )).build();
         }
     }
 

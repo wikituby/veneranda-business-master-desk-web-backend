@@ -18,7 +18,7 @@ import org.example.inventory.item.services.payloads.requests.ItemCategoryUpdateR
 import org.example.inventory.item.services.payloads.responses.basicResponses.CategoryResponse;
 import org.example.inventory.item.services.payloads.responses.dtos.CategoryDTO;
 
-@Path("/Hospital-item")
+@Path("/Business-item")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 @Tag(name = "Hospital Management Module", description = "Hospital Management")
@@ -35,7 +35,7 @@ public class CategoryController {
     @Operation(summary = "add a new categories", description = "add a new categories.")
     @APIResponse(description = "Successful", responseCode = "200", content = @Content(schema = @Schema(implementation = CategoryResponse.class)))
     public Response addShopItem(CategoryRequest request) {
-        return Response.ok(new ResponseMessage(ActionMessages.SAVED.label, categoryService.createCategory(request))).build();
+        return categoryService.createCategory(request);
     }
 
     @PUT

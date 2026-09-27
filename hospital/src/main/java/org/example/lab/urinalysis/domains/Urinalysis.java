@@ -97,7 +97,7 @@ public class Urinalysis extends PanacheEntity {
     @Column
     public String volume;
 
-    @Column(columnDefinition = "LONGTEXT")
+    @Column(columnDefinition = "TEXT")
     public String interpretations;
 
     @Column(columnDefinition = "TEXT")

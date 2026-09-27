@@ -5,18 +5,23 @@
 <groupId>org.example</groupId>
 <artifactId>hospital</artifactId>
 <version>1.0-SNAPSHOT</version>
+<name>Veneranda Business Master</name>
+<description>Veneranda Business Master (VBM) — business operations API (clients, inventory, sales, finance)</description>
 <properties>
-    <compiler-plugin.version>3.11.0</compiler-plugin.version>
-    <maven.compiler.release>17</maven.compiler.release>
+    <compiler-plugin.version>3.13.0</compiler-plugin.version>
+    <maven.compiler.release>21</maven.compiler.release>
+    <maven.compiler.source>21</maven.compiler.source>
+    <maven.compiler.target>21</maven.compiler.target>
+    <java.version>21</java.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
     <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
-    <quarkus.platform.version>3.1.1.Final</quarkus.platform.version>
-    <quarkus.package.type>uber-jar</quarkus.package.type> <!-- This line -->
+    <quarkus.platform.version>3.17.7</quarkus.platform.version>
+    <quarkus.package.jar.type>uber-jar</quarkus.package.jar.type>
 
     <skipITs>true</skipITs>
-    <surefire-plugin.version>3.0.0</surefire-plugin.version>
+    <surefire-plugin.version>3.5.2</surefire-plugin.version>
 </properties>
 <dependencyManagement>
     <dependencies>
@@ -30,10 +35,6 @@
     </dependencies>
 </dependencyManagement>
 <dependencies>
-    <dependency>
-        <groupId>io.quarkus</groupId>
-        <artifactId>quarkus-reactive-mysql-client</artifactId>
-    </dependency>
     <dependency>
         <groupId>io.quarkus</groupId>
         <artifactId>quarkus-hibernate-validator</artifactId>
@@ -99,11 +100,30 @@
     </dependency>
     <dependency>
         <groupId>io.quarkus</groupId>
+        <artifactId>quarkus-scheduler</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>io.quarkus</groupId>
+        <artifactId>quarkus-jdbc-postgresql</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>io.quarkus</groupId>
+        <artifactId>quarkus-reactive-pg-client</artifactId>
+    </dependency>
+    <!-- MySQL kept optional for legacy; local default is PostgreSQL -->
+    <!--
+    <dependency>
+        <groupId>io.quarkus</groupId>
         <artifactId>quarkus-jdbc-mysql</artifactId>
     </dependency>
     <dependency>
         <groupId>io.quarkus</groupId>
-        <artifactId>quarkus-resteasy-reactive-jsonb</artifactId>
+        <artifactId>quarkus-reactive-mysql-client</artifactId>
+    </dependency>
+    -->
+    <dependency>
+        <groupId>io.quarkus</groupId>
+        <artifactId>quarkus-rest-jsonb</artifactId>
     </dependency>
     <dependency>
         <groupId>io.quarkus</groupId>
@@ -111,7 +131,7 @@
     </dependency>
     <dependency>
         <groupId>io.quarkus</groupId>
-        <artifactId>quarkus-rest-client-reactive-jsonb</artifactId>
+        <artifactId>quarkus-rest-client-jsonb</artifactId>
     </dependency>
     <dependency>
         <groupId>io.quarkus</groupId>
@@ -123,7 +143,7 @@
     </dependency>
     <dependency>
         <groupId>io.quarkus</groupId>
-        <artifactId>quarkus-resteasy-reactive</artifactId>
+        <artifactId>quarkus-rest</artifactId>
     </dependency>
     <dependency>
         <groupId>io.quarkus</groupId>
@@ -136,22 +156,16 @@
         <scope>test</scope>
     </dependency>
     <dependency>
-        <groupId>org.wildfly.security</groupId>
-        <artifactId>wildfly-elytron-credential</artifactId>
-        <version>1.20.1.Final</version>
-    </dependency>
-    <dependency>
         <groupId>io.quarkus</groupId>
         <artifactId>quarkus-elytron-security-common</artifactId>
-        <version>2.16.4.Final</version>
     </dependency>
     <dependency>
         <groupId>io.quarkus</groupId>
         <artifactId>quarkus-mailer</artifactId>
     </dependency>
     <dependency>
-        <groupId>javax.inject</groupId>
-        <artifactId>javax.inject</artifactId>
+        <groupId>io.quarkus</groupId>
+        <artifactId>quarkus-websockets-next</artifactId>
     </dependency>
 </dependencies>
 <build>
@@ -197,6 +211,28 @@
 
 
         <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-enforcer-plugin</artifactId>
+            <version>3.5.0</version>
+            <executions>
+                <execution>
+                    <id>enforce-java-21</id>
+                    <goals>
+                        <goal>enforce</goal>
+                    </goals>
+                    <configuration>
+                        <rules>
+                            <requireJavaVersion>
+                                <version>[21,22)</version>
+                                <message>This project requires Java 21. Set JAVA_HOME to JDK 21.</message>
+                            </requireJavaVersion>
+                        </rules>
+                    </configuration>
+                </execution>
+            </executions>
+        </plugin>
+
+        <plugin>
             <artifactId>maven-surefire-plugin</artifactId>
             <version>${surefire-plugin.version}</version>
             <configuration>
@@ -229,6 +265,27 @@
 </build>
 <profiles>
     <profile>
+        <id>reactive-mysql</id>
+        <dependencies>
+            <dependency>
+                <groupId>io.quarkus</groupId>
+                <artifactId>quarkus-reactive-mysql-client</artifactId>
+            </dependency>
+        </dependencies>
+    </profile>
+    <profile>
+        <id>reactive-pg</id>
+        <activation>
+            <activeByDefault>true</activeByDefault>
+        </activation>
+        <dependencies>
+            <dependency>
+                <groupId>io.quarkus</groupId>
+                <artifactId>quarkus-reactive-pg-client</artifactId>
+            </dependency>
+        </dependencies>
+    </profile>
+    <profile>
         <id>native</id>
         <activation>
             <property>
@@ -237,7 +294,7 @@
         </activation>
         <properties>
             <skipITs>false</skipITs>
-            <quarkus.package.type>native</quarkus.package.type>
+            <quarkus.native.enabled>true</quarkus.native.enabled>
             <maven.compiler.plugin.version>3.8.2</maven.compiler.plugin.version>
 
         </properties>

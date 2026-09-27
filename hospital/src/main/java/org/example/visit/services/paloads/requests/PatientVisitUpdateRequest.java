@@ -35,4 +35,15 @@ public class PatientVisitUpdateRequest {
 
     @Schema(example = "Kampala")
     public String nextOfKinAddress;
+
+    /**
+     * Optional: mark whether goods for this order have been delivered.
+     * Null = leave unchanged on update.
+     */
+    @Schema(example = "true")
+    public Boolean goodsDelivered;
+
+    /** Required when confirming goods delivery. */
+    @Schema(example = "Handed to client at counter")
+    public String deliveryNote;
 }

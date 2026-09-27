@@ -19,6 +19,9 @@ public class ExpenseTransactionRequest {
 
     @Schema(example = "Payment for office supplies")
     public String description;
+
+    @Schema(example = "2026-08-19T17:35")
+    public String transactionDateTime;
 }
 
 

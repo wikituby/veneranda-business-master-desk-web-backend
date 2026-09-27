@@ -6,6 +6,7 @@ import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;
+import org.example.configuration.handler.ActionMessages;
 import org.example.configuration.handler.ResponseMessage;
 import org.example.consultations.domains.Complaint;
 import org.example.consultations.domains.ComplaintRepository;
@@ -14,14 +15,20 @@ import org.example.consultations.domains.ComplaintSiteRepository;
 import org.example.consultations.domains.ComplaintType;
 import org.example.consultations.domains.ComplaintTypeRepository;
 import org.example.consultations.domains.Consultation;
+import org.example.consultations.domains.ConsultationDocument;
+import org.example.consultations.domains.ConsultationDocumentRepository;
 import org.example.consultations.domains.ConsultationRepository;
 import org.example.consultations.services.payloads.requests.ComplaintRequest;
+import org.example.consultations.services.payloads.requests.ConsultationDocumentRequest;
 import org.example.consultations.services.payloads.requests.ConsultationRequest;
 import org.example.consultations.services.payloads.responses.ConsultationDTO;
+import org.example.consultations.services.payloads.responses.ConsultationDocumentDTO;
 import org.example.visit.domains.PatientVisit;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @ApplicationScoped
 public class ConsultationService {
@@ -37,6 +44,9 @@ public class ConsultationService {
 
     @Inject
     ComplaintSiteRepository complaintSiteRepository;
+
+    @Inject
+    ConsultationDocumentRepository consultationDocumentRepository;
 
 
     private void processComplaints(Consultation consultation, List<ComplaintRequest> complaintRequests) {
@@ -284,6 +294,59 @@ public class ConsultationService {
 
     private static boolean hasText(String value) {
         return value != null && !value.isBlank();
+    }
+
+    public List<ConsultationDocumentDTO> listConsultationDocumentsByVisitId(Long visitId) {
+        return consultationDocumentRepository
+                .list("visitId = ?1", Sort.by("uploadedAt").descending(), visitId)
+                .stream()
+                .map(ConsultationDocumentDTO::from)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public Response createConsultationDocumentForVisit(Long visitId, ConsultationDocumentRequest request) {
+        if (visitId == null) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(new ResponseMessage("Visit id is required", null))
+                    .build();
+        }
+        PatientVisit visit = PatientVisit.findById(visitId);
+        if (visit == null) {
+            return Response.status(Response.Status.NOT_FOUND)
+                    .entity(new ResponseMessage("Visit not found", null))
+                    .build();
+        }
+        if (request == null || !hasText(request.fileName) || !hasText(request.fileUrl)) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(new ResponseMessage("File name and file URL are required", null))
+                    .build();
+        }
+
+        ConsultationDocument doc = new ConsultationDocument();
+        doc.visitId = visitId;
+        doc.fileName = request.fileName.trim();
+        doc.fileUrl = request.fileUrl.trim();
+        doc.contentType = request.contentType != null ? request.contentType.trim() : null;
+        doc.fileSizeBytes = request.fileSizeBytes;
+        doc.description = request.description != null ? request.description.trim() : null;
+        doc.uploadedBy = request.uploadedBy != null ? request.uploadedBy.trim() : null;
+        doc.uploadedAt = LocalDateTime.now();
+        consultationDocumentRepository.persist(doc);
+
+        return Response.ok(new ResponseMessage(ActionMessages.SAVED.label, ConsultationDocumentDTO.from(doc))).build();
+    }
+
+    @Transactional
+    public Response deleteConsultationDocumentById(Long id) {
+        ConsultationDocument doc = consultationDocumentRepository.findById(id);
+        if (doc == null) {
+            return Response.status(Response.Status.NOT_FOUND)
+                    .entity(new ResponseMessage("Document not found", null))
+                    .build();
+        }
+        consultationDocumentRepository.delete(doc);
+        return Response.ok(new ResponseMessage(ActionMessages.DELETED.label, null)).build();
     }
 
 

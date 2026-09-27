@@ -83,7 +83,9 @@ public class StockTransferService {
             to.reOrderLevel = from.reOrderLevel;
             to.reOrderQuantity = from.reOrderQuantity;
             to.reOrderTo = from.reOrderTo;
-            to.profitMargin = from.profitMargin;
+            to.profitMarginForRetail = from.profitMarginForRetail;
+            to.profitMarginForWholeSale = from.profitMarginForWholeSale;
+            to.profitMarginForSpecialCase = from.profitMarginForSpecialCase;
 
             Store destStore = storeRepository.findById(request.toStoreId);
             if (destStore != null) {

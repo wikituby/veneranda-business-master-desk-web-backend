@@ -10,7 +10,7 @@ import com.itextpdf.layout.property.TextAlignment;
 import com.itextpdf.layout.property.UnitValue;
 import io.quarkus.panache.common.Sort;
 import io.smallrye.mutiny.Multi;
-import io.vertx.mutiny.mysqlclient.MySQLPool;
+import io.vertx.mutiny.sqlclient.Pool;
 import io.vertx.mutiny.sqlclient.Row;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -44,7 +44,7 @@ public class CanteenItemService {
     CanteenItemRepository canteenItemRepository;
 
     @Inject
-    MySQLPool client;
+    Pool client;
 
     @Inject
     UserAuthService userAuthService;
@@ -238,7 +238,7 @@ public class CanteenItemService {
             creationDate,
             unitOfMeasure,
             description
-        FROM vena.Item
+        FROM Item
         %s
         ORDER BY creationDate DESC;
         """.formatted(whereClause);

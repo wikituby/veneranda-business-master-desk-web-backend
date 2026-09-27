@@ -1,0 +1,9 @@
+# Copy to application-local.properties and paste your free API key (gitignored if you add it).
+# Groq free tier (recommended): https://console.groq.com/keys
+doctor-assistant.llm.groq.api-key=gsk_YOUR_KEY_HERE
+
+# Or OpenRouter free models: https://openrouter.ai/settings/keys
+# doctor-assistant.llm.openrouter.api-key=sk-or-v1-YOUR_KEY_HERE
+
+# Force a provider: auto | groq | openrouter | ollama
+# doctor-assistant.llm.provider=auto

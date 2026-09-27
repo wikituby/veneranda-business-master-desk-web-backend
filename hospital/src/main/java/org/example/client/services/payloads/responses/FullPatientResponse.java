@@ -20,6 +20,7 @@ public class FullPatientResponse {
     public LocalDate patientLastUpdatedDate;
     public int patientNo;
     public String occupation;
+    public String bloodGroup;
     public String patientProfilePic;
     public String patientSecondName;
     public String relationship;

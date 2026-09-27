@@ -10,7 +10,7 @@ import com.itextpdf.layout.property.TextAlignment;
 import com.itextpdf.layout.property.UnitValue;
 import io.quarkus.panache.common.Sort;
 import io.smallrye.mutiny.Multi;
-import io.vertx.mutiny.mysqlclient.MySQLPool;
+import io.vertx.mutiny.sqlclient.Pool;
 import io.vertx.mutiny.sqlclient.Row;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -24,6 +24,7 @@ import org.example.inventory.item.domain.ItemCategory;
 import org.example.inventory.item.domain.repositories.ItemCategoryRepository;
 import org.example.inventory.item.domain.repositories.ItemRepository;
 import org.example.inventory.item.services.payloads.requests.ShopItemParametersRequest;
+import org.example.inventory.item.services.payloads.requests.ShopItemReceiveRequest;
 import org.example.inventory.item.services.payloads.requests.ShopItemRequest;
 import org.example.inventory.item.services.payloads.requests.ShopItemUpdateRequest;
 import org.example.inventory.item.services.payloads.responses.FullShopItemResponse;
@@ -33,6 +34,7 @@ import org.example.inventory.stock.domains.Stock;
 import org.example.inventory.stock.domains.StockBatch;
 import org.example.inventory.stock.domains.repositories.StockBatchRepository;
 import org.example.inventory.stock.services.StockTrackingService;
+import org.example.messages.services.AppNotificationPushService;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -56,7 +58,7 @@ public class ShopItemService {
     ItemCategoryRepository itemCategoryRepository;
 
     @Inject
-    MySQLPool client;
+    Pool client;
 
     @Inject
     UserAuthService userAuthService;
@@ -66,6 +68,9 @@ public class ShopItemService {
 
     @Inject
     StockTrackingService stockTrackingService;
+
+    @Inject
+    AppNotificationPushService appNotificationPushService;
 
     private static final String NOT_FOUND = "Not found!";
 
@@ -228,10 +233,12 @@ public class ShopItemService {
 
     public void updateItemStockAtHandAfterSelling(BigDecimal quantity, Item item) {
         // Update the stock at hand
-        item.stockAtHand = item.stockAtHand.subtract(quantity);
+        BigDecimal before = nz(item.stockAtHand);
+        item.stockAtHand = before.subtract(quantity);
 
         // Persist the updated item
         itemRepository.persist(item);
+        appNotificationPushService.maybePushStockAlert(item, before);
     }
 
     public void updateItemStockAtHandBeforeUpdating(BigDecimal quantity, Item item) {
@@ -251,8 +258,10 @@ public class ShopItemService {
 
             if (item != null) {
                 // Subtract the quantity from stockAtHand
-                item.stockAtHand = item.stockAtHand.subtract(BigDecimal.valueOf(dto.quantity));
+                BigDecimal before = nz(item.stockAtHand);
+                item.stockAtHand = before.subtract(BigDecimal.valueOf(dto.quantity));
                 itemRepository.persist(item);
+                appNotificationPushService.maybePushStockAlert(item, before);
             } else {
                 return Response.status(Response.Status.NOT_FOUND)
                         .entity(new ResponseMessage("Item not found: " + dto.itemName, null))
@@ -553,6 +562,42 @@ public class ShopItemService {
     }
 
 
+    public ItemDTO receiveStock(ShopItemReceiveRequest request) {
+        if (request == null || request.itemId == null) {
+            throw new WebApplicationException("itemId is required", 400);
+        }
+        Item item = itemRepository.findById(request.itemId);
+        if (item == null) {
+            throw new WebApplicationException(NOT_FOUND, 404);
+        }
+        BigDecimal qty = request.quantityReceived != null ? request.quantityReceived : BigDecimal.ZERO;
+        if (qty.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new WebApplicationException("quantityReceived must be greater than zero", 400);
+        }
+        item.stockAtHand = nz(item.stockAtHand).add(qty);
+        if (request.unitCostPrice != null) {
+            item.costPrice = request.unitCostPrice;
+        } else if (request.costPrice != null) {
+            item.costPrice = request.costPrice;
+        }
+        if (request.unitSellingPrice != null) {
+            item.sellingPrice = request.unitSellingPrice;
+        } else if (request.sellingPrice != null) {
+            item.sellingPrice = request.sellingPrice;
+        }
+        if (request.expiryDate != null) {
+            item.expiryDate = request.expiryDate;
+        }
+        if (request.packaging != null && !request.packaging.isBlank()) {
+            item.packaging = request.packaging;
+        }
+        if (request.batchNumber != null && !request.batchNumber.isBlank()) {
+            item.batchNumber = request.batchNumber;
+        }
+        itemRepository.persist(item);
+        return new ItemDTO(item);
+    }
+
     public ItemDTO updateShopItemById(Long id, ShopItemUpdateRequest request) {
         return itemRepository.findByIdOptional(id)
                 .map(shopItem -> {
@@ -566,6 +611,7 @@ public class ShopItemService {
                     shopItem.image = request.image;
                     shopItem.reOrderLevel = request.reOrderLevel;
                     shopItem.unitOfMeasure = request.unitOfMeasure;
+                    shopItem.costPrice = request.costPrice != null ? request.costPrice : shopItem.costPrice;
                     shopItem.sellingPrice = request.sellingPrice != null ? request.sellingPrice : BigDecimal.valueOf(0);
                     shopItem.stockAtHand = request.stockAtHand != null ? request.stockAtHand : BigDecimal.valueOf(0);
                     shopItem.dosage = request.dosage;

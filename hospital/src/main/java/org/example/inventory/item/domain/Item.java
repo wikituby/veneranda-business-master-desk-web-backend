@@ -68,6 +68,9 @@ public class Item extends PanacheEntity {
     public BigDecimal sellingPrice;
 
     @Column
+    public Long unitSellingModelId;
+
+    @Column
     public String image;
 
     @Column

@@ -2,7 +2,6 @@ package org.example.messages.endpoints;
 
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.PUT;
@@ -21,6 +20,7 @@ import org.example.messages.services.payloads.requests.CreateConversationRequest
 import org.example.messages.services.payloads.requests.SendMessageRequest;
 import org.example.messages.services.payloads.responses.ConversationDTO;
 import org.example.messages.services.payloads.responses.MessageDTO;
+import org.example.messages.services.payloads.responses.UnreadCountDTO;
 import io.quarkus.security.Authenticated;
 
 
@@ -44,11 +44,21 @@ public class MessageController {
     }
 
     @GET
+    @Authenticated
     @Path("/conversations")
     @Operation(summary = "Get all conversations", description = "Get all conversations for the current user")
     @APIResponse(description = "Successful", responseCode = "200", content = @Content(schema = @Schema(implementation = ConversationDTO.class, type = org.eclipse.microprofile.openapi.annotations.enums.SchemaType.ARRAY)))
     public Response getAllConversations() {
         return messageService.getAllConversations();
+    }
+
+    @GET
+    @Authenticated
+    @Path("/unread-count")
+    @Operation(summary = "Get unread message count", description = "Lightweight total unread count for the header badge")
+    @APIResponse(description = "Successful", responseCode = "200", content = @Content(schema = @Schema(implementation = UnreadCountDTO.class)))
+    public Response getUnreadCount() {
+        return messageService.getUnreadCount();
     }
 
     @GET
@@ -76,6 +86,14 @@ public class MessageController {
     @APIResponse(description = "Successful", responseCode = "200")
     public Response getAvailableUsers() {
         return messageService.getAvailableUsers();
+    }
+
+    @PUT
+    @Authenticated
+    @Path("/conversations/{id}/read")
+    @Operation(summary = "Mark conversation as read", description = "Mark all messages in a conversation as read for the current user")
+    public Response markConversationAsRead(@PathParam("id") Long conversationId) {
+        return messageService.markConversationAsRead(conversationId);
     }
 }
 

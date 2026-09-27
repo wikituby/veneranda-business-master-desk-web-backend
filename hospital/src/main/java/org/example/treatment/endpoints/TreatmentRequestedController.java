@@ -15,13 +15,14 @@ import org.example.configuration.handler.ResponseMessage;
 import org.example.treatment.services.TreatmentRequestService;
 import org.example.treatment.services.payloads.responses.TreatmentRequestedDTO;
 import org.example.treatment.services.payloads.requests.TreatmentRequestedRequest;
+import org.example.treatment.services.payloads.requests.TreatmentStatusUpdateRequest;
 
 import java.util.List;
 
-@Path("Patient-management")
+@Path("Client-management")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-@Tag(name = "Patient Management Module", description = "Patient Management")
+@Tag(name = "Client Management Module", description = "Client Management")
 
 public class TreatmentRequestedController {
 
@@ -56,6 +57,15 @@ public class TreatmentRequestedController {
     @APIResponse(description = "Successful", responseCode = "200", content = @Content(schema = @Schema(implementation = TreatmentRequestedDTO.class)))
     public Response updateTreatmentRequested(@PathParam("id") Long treatmentId, TreatmentRequestedRequest request){
         return treatmentRequestService.updateTreatmentRequested(treatmentId, request);
+    }
+
+    @PATCH
+    @Path("update-treatment-status/{id}")
+    @Transactional
+    @Operation(summary = "Update prescription line status (pharmacist dispense)")
+    @APIResponse(description = "Successful", responseCode = "200")
+    public Response updateTreatmentStatus(@PathParam("id") Long treatmentId, TreatmentStatusUpdateRequest request) {
+        return treatmentRequestService.updateTreatmentStatus(treatmentId, request);
     }
 
     @DELETE

@@ -26,6 +26,8 @@ public class StockReceiveDTO {
     public String invoiceNumber;
     public String batchNumber;
     public String packaging;
+    public Long purchaseOrderId;
+    public String purchaseOrderNo;
 
     public StockReceiveDTO(StockReceive entity) {
         this.id = entity.id;
@@ -46,5 +48,7 @@ public class StockReceiveDTO {
         this.invoiceNumber = entity.invoiceNumber;
         this.batchNumber = entity.batchNumber;
         this.packaging = entity.packaging;
+        this.purchaseOrderId = entity.purchaseOrderId;
+        this.purchaseOrderNo = entity.purchaseOrderNo;
     }
 }

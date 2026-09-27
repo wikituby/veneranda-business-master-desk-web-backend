@@ -1,6 +1,6 @@
 package org.example.course.services;
 
-import io.vertx.mutiny.mysqlclient.MySQLPool;
+import io.vertx.mutiny.sqlclient.Pool;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.WebApplicationException;
@@ -19,7 +19,7 @@ public class CourseService {
     CourseRepository courseRepository;
 
     @Inject
-    MySQLPool client;
+    Pool client;
 
     @Inject
     UserAuthService userAuthService;

@@ -13,6 +13,9 @@ public class TreatmentChartRequest {
     @Schema(example = "Oral")
     public String route;
 
+    @Schema(example = "Take after meals")
+    public String instructions;
+
     @Schema(example = "500")
     public BigDecimal dosageValue;
 
@@ -37,8 +40,8 @@ public class TreatmentChartRequest {
     @Schema(example = "1")
     public Integer totalDosagesGiven;
 
-    @Schema(example = "02:00:00")
-    public LocalTime timeBetweenGivenToNextDosage;
+    @Schema(example = "24hrly")
+    public String timeBetweenGivenToNextDosage;
 
     @Schema(example = "2024-01-15")
     public LocalDate dateForNextDosage;
@@ -48,6 +51,16 @@ public class TreatmentChartRequest {
 
     @Schema(example = "5")
     public Integer unitsUsed;
+
+    @Schema(example = "14")
+    public Integer overallTotalDosages;
+
+    @Schema(example = "10")
+    public Integer totalDosagesRemaining;
+
+    /** HOME or PERIPHERAL_CLINIC when doses are taken away from the facility. */
+    @Schema(example = "HOME")
+    public String administrationPlace;
 }
 
 

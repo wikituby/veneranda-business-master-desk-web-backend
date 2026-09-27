@@ -1,6 +1,7 @@
 package org.example.client.services.payloads.responses.dtos;
 
 import org.example.client.domains.PatientGroup;
+import org.example.client.services.PatientGroupCreditUtil;
 
 public class PatientGroupDTO {
 
@@ -11,6 +12,7 @@ public class PatientGroupDTO {
     public String groupAddress;
     public String groupEmail;
     public String groupContact;
+    public Boolean allowsCreditDespiteUnpaidBalance;
 
     public PatientGroupDTO(PatientGroup patientGroup) {
         this.id = patientGroup.id;
@@ -20,6 +22,8 @@ public class PatientGroupDTO {
         this.groupAddress = patientGroup.groupAddress;
         this.groupEmail = patientGroup.groupEmail;
         this.groupContact = patientGroup.groupContact;
+        this.allowsCreditDespiteUnpaidBalance =
+                PatientGroupCreditUtil.allowsCreditDespiteUnpaidBalance(patientGroup);
     }
 }
 

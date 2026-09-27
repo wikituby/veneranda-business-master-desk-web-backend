@@ -12,6 +12,7 @@ import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
@@ -24,14 +25,22 @@ import org.example.configuration.handler.ActionMessages;
 import org.example.configuration.handler.ResponseMessage;
 import org.example.inventory.item.domain.Item;
 import org.example.inventory.item.domain.repositories.ItemRepository;
+import org.example.inventory.item.services.ItemDosageRuleService;
+import org.example.inventory.item.services.ItemUnitSellingModelService;
 import org.example.inventory.item.services.ShopItemService;
 import org.example.inventory.item.services.payloads.requests.ShopItemParametersRequest;
+import org.example.inventory.item.services.payloads.requests.ShopItemReceiveRequest;
 import org.example.inventory.item.services.payloads.requests.ShopItemRequest;
 import org.example.inventory.item.services.payloads.requests.ShopItemUpdateRequest;
 import org.example.inventory.item.services.payloads.responses.ItemDTO;
 import org.example.inventory.item.services.payloads.responses.ItemQuantityDto;
 import org.example.inventory.item.services.payloads.responses.ShopItemResponse;
+import org.example.inventory.item.services.payloads.responses.dtos.ItemDosageRuleDTO;
+import org.example.inventory.item.services.payloads.responses.dtos.ItemUnitSellingModelDTO;
+import org.example.inventory.stock.services.payloads.requests.StockDosageRuleRequest;
+import org.example.inventory.stock.services.payloads.requests.UnitSellingModelRequest;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Path("/shop-item")
@@ -46,6 +55,12 @@ public class ShopItemController {
 
     @Inject
     ItemRepository shopItemRepository;
+
+    @Inject
+    ItemUnitSellingModelService itemUnitSellingModelService;
+
+    @Inject
+    ItemDosageRuleService itemDosageRuleService;
 
     @GET
     @Path("/search")
@@ -158,6 +173,15 @@ public class ShopItemController {
 
 
 
+    @POST
+    @Path("/receive-stock")
+    @Transactional
+    @Operation(summary = "Receive stock for a shop item", description = "Increments stock at hand for a shop item.")
+    @APIResponse(description = "Successful", responseCode = "200", content = @Content(schema = @Schema(implementation = ItemDTO.class)))
+    public Response receiveStock(ShopItemReceiveRequest request) {
+        return Response.ok(new ResponseMessage(ActionMessages.SAVED.label, shopItemService.receiveStock(request))).build();
+    }
+
     @PUT
     @Path("update-item/{id}")
    // @RolesAllowed({"ADMIN","AGENT"})
@@ -200,6 +224,93 @@ public class ShopItemController {
         return shopItemService.generateAndReturnPdf(request);
     }
 
+    @POST
+    @Path("/{itemId}/dosage-rules")
+    @Transactional
+    @Operation(summary = "Create Item Dosage Rule", description = "Creates a standard dosage rule linked to a shop item.")
+    @APIResponse(description = "Dosage rule created successfully.", responseCode = "200", content = @Content(schema = @Schema(implementation = ItemDosageRuleDTO.class)))
+    public Response createDosageRule(@PathParam("itemId") Long itemId, StockDosageRuleRequest request) {
+        return itemDosageRuleService.createDosageRule(itemId, request);
+    }
+
+    @GET
+    @Path("/{itemId}/dosage-rules")
+    @Transactional
+    @Operation(summary = "List Item Dosage Rules", description = "Lists dosage rules linked to a shop item.")
+    @APIResponse(description = "Dosage rules fetched successfully.", responseCode = "200", content = @Content(schema = @Schema(implementation = ItemDosageRuleDTO.class)))
+    public Response getDosageRulesByItem(
+            @PathParam("itemId") Long itemId,
+            @QueryParam("activeOnly") @DefaultValue("true") boolean activeOnly
+    ) {
+        var rules = activeOnly
+                ? itemDosageRuleService.getActiveDosageRulesByItem(itemId)
+                : itemDosageRuleService.getDosageRulesByItem(itemId);
+        return Response.ok(new ResponseMessage(ActionMessages.FETCHED.label, rules)).build();
+    }
+
+    @PUT
+    @Path("/dosage-rules/{ruleId}")
+    @Transactional
+    @Operation(summary = "Update Item Dosage Rule", description = "Updates an existing shop item dosage rule.")
+    @APIResponse(description = "Dosage rule updated successfully.", responseCode = "200", content = @Content(schema = @Schema(implementation = ItemDosageRuleDTO.class)))
+    public Response updateDosageRule(@PathParam("ruleId") Long ruleId, StockDosageRuleRequest request) {
+        return itemDosageRuleService.updateDosageRule(ruleId, request);
+    }
+
+    @DELETE
+    @Path("/dosage-rules/{ruleId}")
+    @Transactional
+    @Operation(summary = "Delete Item Dosage Rule", description = "Deletes a shop item dosage rule.")
+    @APIResponse(description = "Dosage rule deleted successfully.", responseCode = "200")
+    public Response deleteDosageRule(@PathParam("ruleId") Long ruleId) {
+        return itemDosageRuleService.deleteDosageRule(ruleId);
+    }
+
+    @POST
+    @Path("/{itemId}/unit-selling-models")
+    @Transactional
+    @Operation(summary = "Create Item Unit Selling Model", description = "Creates a unit selling model linked to a shop item.")
+    @APIResponse(description = "Unit selling model created successfully.", responseCode = "200", content = @Content(schema = @Schema(implementation = ItemUnitSellingModelDTO.class)))
+    public Response createUnitSellingModel(
+            @PathParam("itemId") Long itemId,
+            UnitSellingModelRequest request
+    ) {
+        return itemUnitSellingModelService.createModel(itemId, request);
+    }
+
+    @GET
+    @Path("/{itemId}/unit-selling-models")
+    @Transactional
+    @Operation(summary = "List Item Unit Selling Models", description = "Lists unit selling models linked to a shop item.")
+    @APIResponse(description = "Unit selling models fetched successfully.", responseCode = "200", content = @Content(schema = @Schema(implementation = ItemUnitSellingModelDTO.class)))
+    public Response getUnitSellingModelsByItem(
+            @PathParam("itemId") Long itemId,
+            @QueryParam("unitCostPrice") BigDecimal unitCostPrice
+    ) {
+        var models = itemUnitSellingModelService.listByItem(itemId, unitCostPrice);
+        return Response.ok(new ResponseMessage(ActionMessages.FETCHED.label, models)).build();
+    }
+
+    @PUT
+    @Path("/unit-selling-models/{modelId}")
+    @Transactional
+    @Operation(summary = "Update Item Unit Selling Model", description = "Updates an existing shop item unit selling model.")
+    @APIResponse(description = "Unit selling model updated successfully.", responseCode = "200", content = @Content(schema = @Schema(implementation = ItemUnitSellingModelDTO.class)))
+    public Response updateUnitSellingModel(
+            @PathParam("modelId") Long modelId,
+            UnitSellingModelRequest request
+    ) {
+        return itemUnitSellingModelService.updateModel(modelId, request);
+    }
+
+    @DELETE
+    @Path("/unit-selling-models/{modelId}")
+    @Transactional
+    @Operation(summary = "Delete Item Unit Selling Model", description = "Deletes a shop item unit selling model.")
+    @APIResponse(description = "Unit selling model deleted successfully.", responseCode = "200")
+    public Response deleteUnitSellingModel(@PathParam("modelId") Long modelId) {
+        return itemUnitSellingModelService.deleteModel(modelId);
+    }
 
 }
 

@@ -12,7 +12,10 @@ import org.example.configuration.handler.ActionMessages;
 import org.example.inventory.item.services.payloads.requests.CategoryRequest;
 import org.example.inventory.item.services.payloads.requests.ItemCategoryUpdateRequest;
 import org.example.inventory.item.services.payloads.responses.dtos.CategoryDTO;
+import org.example.inventory.item.domain.ActiveIngredient;
+import org.example.inventory.stock.domains.StockItem;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -26,17 +29,34 @@ public class CategoryService {
 
     @Transactional
     public Response createCategory(CategoryRequest request) {
-        // Check if category with same name already exists
-        Category existing = categoryRepository.find("name", request.name).firstResult();
+        if (request == null || request.name == null || request.name.isBlank()) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(new ResponseMessage("Category name is required.", null))
+                    .build();
+        }
+
+        String trimmedName = request.name.trim();
+
+        // Names must be unique per parent (siblings), not globally across the whole tree.
+        Category existing;
+        if (request.parentId != null) {
+            existing = categoryRepository
+                    .find("name = ?1 and parent.id = ?2", trimmedName, request.parentId)
+                    .firstResult();
+        } else {
+            existing = categoryRepository
+                    .find("name = ?1 and parent is null", trimmedName)
+                    .firstResult();
+        }
+
         if (existing != null) {
             return Response.status(Response.Status.BAD_REQUEST)
-                    .entity(new ResponseMessage("Category with name already exists.: " + request.name, null))
+                    .entity(new ResponseMessage("Category with name already exists under this parent: " + trimmedName, null))
                     .build();
-            //throw new IllegalStateException("Category with name '" + request.name + "' already exists.");
         }
 
         Category category = new Category();
-        category.name = request.name;
+        category.name = trimmedName;
 
         // Assign parent if provided
         if (request.parentId != null) {
@@ -67,16 +87,32 @@ public class CategoryService {
                     .build();
         }
 
-        // Check if another category with the same name exists
-        Category existing = categoryRepository.find("name", request.name).firstResult();
-        if (existing != null && !existing.id.equals(request.categoryId)) {
+        String trimmedName = request.name == null ? "" : request.name.trim();
+        if (trimmedName.isBlank()) {
             return Response.status(Response.Status.BAD_REQUEST)
-                    .entity(new ResponseMessage("Another category with the same name already exists: " + request.name, null))
+                    .entity(new ResponseMessage("Category name is required.", null))
                     .build();
         }
 
-        // Update name
-        category.name = request.name;
+        Long targetParentId = request.parentId;
+        Category existing;
+        if (targetParentId != null) {
+            existing = categoryRepository
+                    .find("name = ?1 and parent.id = ?2", trimmedName, targetParentId)
+                    .firstResult();
+        } else {
+            existing = categoryRepository
+                    .find("name = ?1 and parent is null", trimmedName)
+                    .firstResult();
+        }
+
+        if (existing != null && !existing.id.equals(request.categoryId)) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(new ResponseMessage("Another category with the same name already exists under this parent: " + trimmedName, null))
+                    .build();
+        }
+
+        category.name = trimmedName;
 
         // Update parent if provided
         if (request.parentId != null) {
@@ -107,29 +143,143 @@ public class CategoryService {
         Category category = categoryRepository.findById(id);
         if (category == null) {
             return Response.status(Response.Status.NOT_FOUND)
-                    .entity(new ResponseMessage("Category not found for ID: " + id))
+                    .entity(new ResponseMessage("Category not found for ID: " + id, null))
                     .build();
         }
 
-        // Optional: Check if it has subcategories
-        long subCount = categoryRepository.count("parent.id", id);
-        if (subCount > 0) {
-            return Response.status(Response.Status.BAD_REQUEST)
-                    .entity(new ResponseMessage("Cannot delete category because it has subcategories.", null))
-                    .build();
+        List<Long> categoryIdsToDelete = collectCategoryTreeIds(id);
+        int reassignedItems = reassignLinkedItemsBeforeDelete(categoryIdsToDelete);
+
+        int deletedCount = deleteCategoryTree(id);
+        categoryRepository.getEntityManager().flush();
+
+        String message = deletedCount > 1
+                ? "Category and " + (deletedCount - 1) + " subcategories deleted successfully"
+                : "Category deleted successfully";
+
+        if (reassignedItems > 0) {
+            message += ". " + reassignedItems + " linked item(s) were moved to the parent category"
+                    + " (or left without a category when no parent exists).";
         }
 
-        // Optional: Check if any items belong to this category
-        // long itemCount = itemRepository.count("category.id", id);
-        // if (itemCount > 0) {
-        //     return Response.status(Response.Status.BAD_REQUEST)
-        //             .entity(new ResponseMessage("Cannot delete category because it is linked to existing items.", null))
-        //             .build();
-        // }
+        return Response.ok(new ResponseMessage(message, null)).build();
+    }
 
-        categoryRepository.delete(category);
+    /**
+     * Deletes a category and every descendant, deepest nodes first.
+     * Uses bulk JPQL deletes so child rows are actually removed from the database.
+     */
+    private int deleteCategoryTree(Long id) {
+        Category category = categoryRepository.findById(id);
+        if (category == null) {
+            return 0;
+        }
 
-        return Response.ok(new ResponseMessage("Category deleted successfully", null)).build();
+        int deletedCount = 0;
+        for (Category child : categoryRepository.list("parent.id", id)) {
+            deletedCount += deleteCategoryTree(child.id);
+        }
+
+        categoryRepository.getEntityManager()
+                .createQuery("DELETE FROM Category c WHERE c.id = :id")
+                .setParameter("id", id)
+                .executeUpdate();
+
+        return deletedCount + 1;
+    }
+
+    /** Collect every category id in the subtree (parent + all descendants). */
+    private List<Long> collectCategoryTreeIds(Long id) {
+        List<Long> ids = new ArrayList<>();
+        collectCategoryTreeIdsRecursive(id, ids);
+        return ids;
+    }
+
+    private void collectCategoryTreeIdsRecursive(Long id, List<Long> ids) {
+        Category category = categoryRepository.findById(id);
+        if (category == null) {
+            return;
+        }
+        for (Category child : categoryRepository.list("parent.id", id)) {
+            collectCategoryTreeIdsRecursive(child.id, ids);
+        }
+        ids.add(id);
+    }
+
+    /**
+     * Before deleting categories, move linked stock items and active ingredients to each
+     * deleted category's parent. Root categories with no parent leave items uncategorized.
+     * Processes deepest categories first so items bubble up correctly through the tree.
+     */
+    private int reassignLinkedItemsBeforeDelete(List<Long> categoryIdsToDelete) {
+        if (categoryIdsToDelete == null || categoryIdsToDelete.isEmpty()) {
+            return 0;
+        }
+
+        List<Long> orderedIds = sortCategoryIdsByDepthDescending(categoryIdsToDelete);
+        int reassignedTotal = 0;
+
+        for (Long categoryId : orderedIds) {
+            Category category = categoryRepository.findById(categoryId);
+            if (category == null) {
+                continue;
+            }
+
+            Category parent = category.parent;
+            Long newParentId = parent != null ? parent.id : null;
+            String newParentName = parent != null ? parent.name : null;
+
+            reassignedTotal += reassignStockItemsFromCategory(categoryId, newParentId, newParentName);
+            reassignedTotal += reassignActiveIngredientsFromCategory(categoryId, newParentId, newParentName);
+        }
+
+        return reassignedTotal;
+    }
+
+    private List<Long> sortCategoryIdsByDepthDescending(List<Long> categoryIds) {
+        List<Long> ordered = new ArrayList<>(categoryIds);
+        ordered.sort((leftId, rightId) -> Integer.compare(getCategoryDepth(rightId), getCategoryDepth(leftId)));
+        return ordered;
+    }
+
+    private int getCategoryDepth(Long categoryId) {
+        int depth = 0;
+        Category current = categoryRepository.findById(categoryId);
+        Set<Long> visited = new HashSet<>();
+
+        while (current != null && current.parent != null) {
+            if (!visited.add(current.id)) {
+                break;
+            }
+            depth++;
+            current = current.parent;
+        }
+
+        return depth;
+    }
+
+    private int reassignStockItemsFromCategory(Long deletedCategoryId, Long newParentId, String newParentName) {
+        if (newParentId == null) {
+            return (int) StockItem.update(
+                    "itemCategoryId = null, itemCategoryName = null where itemCategoryId = ?1",
+                    deletedCategoryId);
+        }
+
+        return (int) StockItem.update(
+                "itemCategoryId = ?1, itemCategoryName = ?2 where itemCategoryId = ?3",
+                newParentId, newParentName, deletedCategoryId);
+    }
+
+    private int reassignActiveIngredientsFromCategory(Long deletedCategoryId, Long newParentId, String newParentName) {
+        if (newParentId == null) {
+            return (int) ActiveIngredient.update(
+                    "categoryId = null, categoryName = null where categoryId = ?1",
+                    deletedCategoryId);
+        }
+
+        return (int) ActiveIngredient.update(
+                "categoryId = ?1, categoryName = ?2 where categoryId = ?3",
+                newParentId, newParentName, deletedCategoryId);
     }
 
     @Transactional

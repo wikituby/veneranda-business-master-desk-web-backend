@@ -14,6 +14,7 @@ public class InitialTriageVitalsDTO {
     public Double systolic;
     public Double diastolic;
     public Double map;
+    public Double pulsePressure;
     public String bloodPressure;
     public String takenBy;
     public Double pulseRate;
@@ -45,6 +46,11 @@ public class InitialTriageVitalsDTO {
         this.diastolic = initialTriageVitals.diastolic;
         this.bloodPressure = initialTriageVitals.bloodPressure;
         this.map = initialTriageVitals.map;
+        this.pulsePressure = initialTriageVitals.pulsePressure != null
+                ? initialTriageVitals.pulsePressure
+                : (initialTriageVitals.systolic != null && initialTriageVitals.diastolic != null
+                    ? initialTriageVitals.systolic - initialTriageVitals.diastolic
+                    : null);
         this.temperature = initialTriageVitals.temperature;
         this.weight = initialTriageVitals.weight;
         this.height = initialTriageVitals.height;

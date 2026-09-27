@@ -20,6 +20,9 @@ public class PatientGroupUpdateRequest {
 
     @Schema(example = "katoma")
     public String groupAddress;
+
+    @Schema(description = "When true, group members may incur more debt despite unpaid balances")
+    public Boolean allowsCreditDespiteUnpaidBalance;
 }
 
 

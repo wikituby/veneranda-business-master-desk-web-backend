@@ -29,7 +29,7 @@ public class ExpenseTransactionDto {
     public ExpenseTransactionDto(ExpenseTransaction expenseTransaction) {
         if (expenseTransaction != null) {
             this.id = expenseTransaction.id;
-            this.userId = expenseTransaction.user != null ? expenseTransaction.user.id : null;
+            this.userId = expenseTransaction.userId;
             this.expenseAccountId = expenseTransaction.expenseAccount != null ? expenseTransaction.expenseAccount.id : null;
             this.expenseAccountName = expenseTransaction.expenseAccountName;
             this.userName = expenseTransaction.userName;

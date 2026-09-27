@@ -21,10 +21,10 @@ import org.example.treatment.treatmentChart.services.TreatmentChartService;
 import org.example.treatment.treatmentChart.services.payloads.requests.TreatmentChartRequest;
 import org.example.treatment.treatmentChart.services.payloads.responses.TreatmentChartDTO;
 
-@Path("Patient-management")
+@Path("Client-management")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-@Tag(name = "Patient Management Module", description = "Patient Management")
+@Tag(name = "Client Management Module", description = "Client Management")
 public class TreatmentChartController {
 
     @Inject
@@ -57,6 +57,14 @@ public class TreatmentChartController {
     }
 
     @GET
+    @Path("get-treatment-charts-by-request-id/{id}/all")
+    @Operation(summary = "get-treatment-charts-by-request-id", description = "Get all treatment chart entries for a treatment request")
+    @APIResponse(description = "Successful", responseCode = "200", content = @Content(schema = @Schema(implementation = TreatmentChartDTO.class)))
+    public Response getTreatmentChartsByRequestId(@PathParam("id") Long treatmentRequestedId) {
+        return treatmentChartService.getTreatmentChartsByRequestId(treatmentRequestedId);
+    }
+
+    @GET
     @Path("get-treatment-charts-by-visit-id/{id}")
     @Operation(summary = "get-treatment-charts-by-visit-id", description = "Get all treatment charts for a visit")
     @APIResponse(description = "Successful", responseCode = "200", content = @Content(schema = @Schema(implementation = TreatmentChartDTO.class)))
@@ -70,6 +78,15 @@ public class TreatmentChartController {
     @Operation(summary = "delete-treatment-chart", description = "Delete a treatment chart by ID")
     @APIResponse(description = "Successful", responseCode = "200")
     public Response deleteTreatmentChart(@PathParam("id") Long id) {
+        return treatmentChartService.deleteTreatmentChart(id);
+    }
+
+    @POST
+    @Path("delete-treatment-chart/{id}")
+    @Transactional
+    @Operation(summary = "delete-treatment-chart", description = "Delete a treatment chart by ID")
+    @APIResponse(description = "Successful", responseCode = "200")
+    public Response deleteTreatmentChartPost(@PathParam("id") Long id) {
         return treatmentChartService.deleteTreatmentChart(id);
     }
 }

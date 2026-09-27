@@ -41,16 +41,24 @@ import org.example.client.services.payloads.responses.dtos.PatientDTO;
 import org.example.configuration.handler.ActionMessages;
 import org.example.configuration.handler.ResponseMessage;
 import org.example.consultations.domains.Consultation;
+import org.example.consultations.domains.PresentingComplaint;
 import org.example.consultations.services.ConsultationService;
 import org.example.consultations.services.payloads.responses.ConsultationDTO;
 import org.example.procedure.procedureRequested.domains.ProcedureRequested;
+import org.example.pharmacy.sundry.domains.VisitSundry;
+import org.example.inventory.item.domain.Item;
+import org.example.inventory.stock.domains.StockBatch;
 import org.example.treatment.domains.TreatmentRequested;
 import org.example.visit.domains.repositories.PatientVisitRepository;
 import org.example.finance.invoice.domains.repositories.InvoiceRepository;
 import org.example.finance.invoice.domains.Invoice;
 import org.example.finance.invoice.services.payloads.responses.InvoiceDTO;
 import org.example.finance.invoice.services.payloads.requests.InvoiceUpdateRequest;
+import org.example.finance.invoice.services.payloads.requests.StatementPdfRequest;
 import org.example.finance.payments.cash.services.PaymentService;
+import org.example.subscription.services.FacilityBranding;
+import org.example.subscription.services.FacilityBrandingService;
+import org.example.subscription.services.FacilityPdfLogoService;
 import org.example.visit.domains.PatientVisit;
 import org.example.vitals.domains.InitialTriageVitals;
 import org.example.lab.cbc.domains.Cbc;
@@ -76,10 +84,12 @@ import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.StringJoiner;
 
 @ApplicationScoped
@@ -100,6 +110,16 @@ public class InvoiceService {
     @Inject
     ConsultationService consultationService;
 
+    @Inject
+    FacilityBrandingService facilityBrandingService;
+
+    @Inject
+    FacilityPdfLogoService facilityPdfLogoService;
+
+    private FacilityBranding facilityBranding() {
+        return facilityBrandingService.resolveDefaultBranding();
+    }
+
     private static final String NOT_FOUND = "Not found!";
 
     private static final DeviceRgb LAB_SECTION_BLUE = new DeviceRgb(30, 90, 180);
@@ -109,6 +129,241 @@ public class InvoiceService {
             return "";
         }
         return value.stripTrailingZeros().toPlainString();
+    }
+
+    private boolean resolveIncludeNextOfKin(StatementPdfRequest request) {
+        if (request == null || request.includeNextOfKin == null) {
+            return true;
+        }
+        return request.includeNextOfKin;
+    }
+
+    private boolean resolveIncludePaymentTable(StatementPdfRequest request) {
+        if (request == null || request.includePaymentTable == null) {
+            return true;
+        }
+        return request.includePaymentTable;
+    }
+
+    private boolean resolveIncludeAmountColumns(StatementPdfRequest request) {
+        if (request == null || request.includeAmountColumns == null) {
+            return true;
+        }
+        return request.includeAmountColumns;
+    }
+
+    private boolean resolveIncludeFooter(StatementPdfRequest request) {
+        if (request == null || request.includeFooter == null) {
+            return true;
+        }
+        return request.includeFooter;
+    }
+
+    private boolean resolveIncludeFlag(Boolean value) {
+        return value == null || value;
+    }
+
+    private String formatProcedureDateTime(ProcedureRequested procedure) {
+        if (procedure == null) {
+            return "";
+        }
+        String datePart = procedure.dateOfProcedure != null ? procedure.dateOfProcedure.toString() : "";
+        String timePart = procedure.timeOfProcedure != null
+                ? procedure.timeOfProcedure.withNano(0).toString()
+                : "";
+        if (datePart.isEmpty() && timePart.isEmpty()) {
+            return "";
+        }
+        if (datePart.isEmpty()) {
+            return timePart;
+        }
+        if (timePart.isEmpty()) {
+            return datePart;
+        }
+        return datePart + " " + timePart;
+    }
+
+    private Cell statementHeaderCell(String text, TextAlignment alignment) {
+        return createCell(text, 1, alignment)
+                .setBold()
+                .setFontSize(7)
+                .setFontColor(ColorConstants.WHITE)
+                .setBackgroundColor(ColorConstants.DARK_GRAY)
+                .setBorder(Border.NO_BORDER);
+    }
+
+    private Cell statementBodyCell(String text, TextAlignment alignment, com.itextpdf.kernel.colors.Color rowColor) {
+        return createCell(text != null ? text : "", 1, alignment)
+                .setFontSize(7)
+                .setBackgroundColor(rowColor)
+                .setBorder(Border.NO_BORDER)
+                .setBorderBottom(new SolidBorder(1));
+    }
+
+    private void addStatementServicesTable(Document document, List<ProcedureRequested> procedures, boolean includeAmounts) {
+        if (procedures == null || procedures.isEmpty()) {
+            return;
+        }
+        float[] widths = includeAmounts
+                ? new float[]{3.2f, 1.8f, 1.3f, 1.3f, 3.2f, 1.2f}
+                : new float[]{3.5f, 2f, 1.5f, 1.5f, 3.5f};
+        Table procedureTable = new Table(UnitValue.createPercentArray(widths));
+        procedureTable.setWidth(UnitValue.createPercentValue(100));
+
+        procedureTable.addCell(statementHeaderCell("SERVICES OFFERED", TextAlignment.LEFT));
+        procedureTable.addCell(statementHeaderCell("DATE & TIME", TextAlignment.LEFT));
+        procedureTable.addCell(statementHeaderCell("REQUESTED BY", TextAlignment.LEFT));
+        procedureTable.addCell(statementHeaderCell("DONE BY", TextAlignment.LEFT));
+        procedureTable.addCell(statementHeaderCell("SUMMARY OF RESULTS / CONCLUSION", TextAlignment.RIGHT));
+        if (includeAmounts) {
+            procedureTable.addCell(statementHeaderCell("PRICE (UGX)", TextAlignment.RIGHT));
+        }
+
+        for (ProcedureRequested procedureRequested : procedures) {
+            com.itextpdf.kernel.colors.Color rowColor = ColorConstants.WHITE;
+            procedureTable.addCell(statementBodyCell(
+                    procedureRequested.procedureRequestedName != null
+                            ? procedureRequested.procedureRequestedName.toUpperCase()
+                            : "",
+                    TextAlignment.LEFT,
+                    rowColor));
+            procedureTable.addCell(statementBodyCell(
+                    formatProcedureDateTime(procedureRequested).toUpperCase(),
+                    TextAlignment.LEFT,
+                    rowColor));
+            procedureTable.addCell(statementBodyCell(
+                    ellipsizeWithTwoDots(procedureRequested.orderedBy, 12),
+                    TextAlignment.LEFT,
+                    rowColor));
+            procedureTable.addCell(statementBodyCell(
+                    ellipsizeWithTwoDots(procedureRequested.doneBy, 12),
+                    TextAlignment.LEFT,
+                    rowColor));
+            String report = procedureRequested.report != null ? String.valueOf(procedureRequested.report).toUpperCase() : "";
+            procedureTable.addCell(statementBodyCell(report, TextAlignment.RIGHT, rowColor));
+            if (includeAmounts) {
+                procedureTable.addCell(statementBodyCell(
+                        plainNumber(procedureRequested.unitSellingPrice),
+                        TextAlignment.RIGHT,
+                        rowColor));
+            }
+        }
+        document.add(procedureTable);
+    }
+
+    private void addStatementDrugsTable(Document document, List<TreatmentRequested> treatments, boolean includeAmounts) {
+        if (treatments == null || treatments.isEmpty()) {
+            return;
+        }
+        float[] widths = includeAmounts
+                ? new float[]{4f, 3.2f, 1f, 1.4f, 1.4f}
+                : new float[]{5f, 4f};
+        Table treatmentTable = new Table(UnitValue.createPercentArray(widths));
+        treatmentTable.setWidth(UnitValue.createPercentValue(100));
+
+        treatmentTable.addCell(statementHeaderCell("DRUG / ITEM / TREATMENT", TextAlignment.LEFT));
+        treatmentTable.addCell(statementHeaderCell("DESCRIPTION / NOTES", TextAlignment.RIGHT));
+        if (includeAmounts) {
+            treatmentTable.addCell(statementHeaderCell("QTY", TextAlignment.RIGHT));
+            treatmentTable.addCell(statementHeaderCell("UNIT PRICE (UGX)", TextAlignment.RIGHT));
+            treatmentTable.addCell(statementHeaderCell("TOTAL (UGX)", TextAlignment.RIGHT));
+        }
+
+        for (TreatmentRequested treatmentRequested : treatments) {
+            com.itextpdf.kernel.colors.Color rowColor = ColorConstants.WHITE;
+            String itemName = treatmentRequested.itemName != null
+                    ? treatmentRequested.itemName.toUpperCase()
+                    : "";
+            treatmentTable.addCell(statementBodyCell(itemName, TextAlignment.LEFT, rowColor));
+            String description = plainNumber(treatmentRequested.amountPerFrequencyValue) + " "
+                    + treatmentRequested.amountPerFrequencyUnit + " "
+                    + plainNumber(treatmentRequested.frequencyValue) + " "
+                    + "X" + " " + treatmentRequested.frequencyUnit + " "
+                    + "FOR" + " " + plainNumber(treatmentRequested.durationValue) + " "
+                    + treatmentRequested.durationUnit;
+            treatmentTable.addCell(statementBodyCell(description, TextAlignment.RIGHT, rowColor));
+            if (includeAmounts) {
+                treatmentTable.addCell(statementBodyCell(
+                        plainNumber(treatmentRequested.quantity),
+                        TextAlignment.RIGHT,
+                        rowColor));
+                treatmentTable.addCell(statementBodyCell(
+                        plainNumber(treatmentRequested.unitSellingPrice),
+                        TextAlignment.RIGHT,
+                        rowColor));
+                treatmentTable.addCell(statementBodyCell(
+                        plainNumber(treatmentRequested.totalAmount),
+                        TextAlignment.RIGHT,
+                        rowColor));
+            }
+        }
+        document.add(treatmentTable);
+    }
+
+    private boolean resolveIncludePatientName(StatementPdfRequest request) {
+        return request == null || resolveIncludeFlag(request.includePatientName);
+    }
+
+    private boolean resolveIncludePatientAddress(StatementPdfRequest request) {
+        return request == null || resolveIncludeFlag(request.includePatientAddress);
+    }
+
+    private boolean resolveIncludePatientGender(StatementPdfRequest request) {
+        return request == null || resolveIncludeFlag(request.includePatientGender);
+    }
+
+    private boolean resolveIncludePatientAge(StatementPdfRequest request) {
+        return request == null || resolveIncludeFlag(request.includePatientAge);
+    }
+
+    private boolean resolveIncludePatientContact(StatementPdfRequest request) {
+        return request == null || resolveIncludeFlag(request.includePatientContact);
+    }
+
+    private boolean resolveIncludeVisitDate(StatementPdfRequest request) {
+        return request == null || resolveIncludeFlag(request.includeVisitDate);
+    }
+
+    private boolean resolveIncludeBalanceDue(StatementPdfRequest request) {
+        return request == null || resolveIncludeFlag(request.includeBalanceDue);
+    }
+
+    private String resolveStatementDocumentTitle(StatementPdfRequest request) {
+        String type = "MEDICAL_REPORT";
+        if (request != null && request.documentType != null && !request.documentType.trim().isEmpty()) {
+            type = request.documentType.trim().toUpperCase().replace(' ', '_').replace('-', '_');
+        }
+        if ("DISCHARGE_FORM".equals(type) || "DISCHARGE".equals(type)) {
+            return "SYSTEM GENERATED DISCHARGE FORM";
+        }
+        if ("MEDICAL_FORM".equals(type)) {
+            return "SYSTEM GENERATED MEDICAL FORM";
+        }
+        return "SYSTEM GENERATED MEDICAL REPORT";
+    }
+
+    private List<TreatmentRequested> resolveStatementTreatments(PatientVisit visit, StatementPdfRequest request) {
+        List<TreatmentRequested> all = visit.getTreatmentRequested();
+        if (all == null || all.isEmpty()) {
+            return List.of();
+        }
+        if (request == null || request.treatmentRequestedIds == null) {
+            return all;
+        }
+        Set<Long> ids = new HashSet<>(request.treatmentRequestedIds);
+        return all.stream().filter(t -> ids.contains(t.id)).toList();
+    }
+
+    private List<ProcedureRequested> resolveStatementProcedures(PatientVisit visit, StatementPdfRequest request) {
+        List<ProcedureRequested> all = visit.getProceduresRequested();
+        if (all == null || all.isEmpty()) {
+            return List.of();
+        }
+        if (request == null || request.procedureRequestedIds == null) {
+            return all;
+        }
+        Set<Long> ids = new HashSet<>(request.procedureRequestedIds);
+        return all.stream().filter(p -> ids.contains(p.id)).toList();
     }
 
     @Transactional
@@ -165,6 +420,18 @@ public class InvoiceService {
         return invoice;
     }
 
+    /**
+     * Recomputes invoice subtotal, total amount, and balance due from all visit line items
+     * (treatments, procedures, etc.). Safe to call before payment when totals may still be zero.
+     */
+    @Transactional
+    public void syncInvoiceTotalsForVisit(Long visitId) {
+        if (visitId == null) {
+            return;
+        }
+        getInvoiceSubTotal(visitId);
+    }
+
 
     public BigDecimal calculateTotalBalanceDueForClosedVisits(Long patientId) {
         List<Invoice> invoices = Invoice.find(
@@ -174,6 +441,20 @@ public class InvoiceService {
         return invoices.stream()
                 .map(invoice -> invoice.balanceDue)
                 .filter(Objects::nonNull)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    /** Sum of balanceDue across all visits for a patient (open and closed). */
+    public BigDecimal calculateTotalBalanceDueForAllVisits(Long patientId) {
+        if (patientId == null) {
+            return BigDecimal.ZERO;
+        }
+        @SuppressWarnings("unchecked")
+        List<org.example.visit.domains.PatientVisit> visits =
+                org.example.visit.domains.PatientVisit.find("patient.id", patientId).list();
+        return visits.stream()
+                .map(v -> v.balanceDue != null ? v.balanceDue : BigDecimal.ZERO)
+                .filter(b -> b.compareTo(BigDecimal.ZERO) > 0)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
@@ -263,6 +544,15 @@ public class InvoiceService {
         patientVisit.amountPaid = invoice.amountPaid;
         patientVisit.subTotal = invoice.subTotal;
         patientVisit.totalAmount = invoice.totalAmount;
+        BigDecimal syncedCost = invoiceSubTotalMap.get("TotalCostPrice");
+        syncVisitFinancialBreakdown(
+                patientVisit,
+                invoice,
+                nz(invoiceSubTotalMap.get("ProcedureSellingTotal")),
+                nz(invoiceSubTotalMap.get("TreatmentSellingTotal")),
+                nz(invoiceSubTotalMap.get("ProcedureCostTotal")),
+                nz(invoiceSubTotalMap.get("TreatmentCostTotal")),
+                syncedCost != null ? syncedCost : BigDecimal.ZERO);
         patientVisitRepository.persist(patientVisit);
 
 
@@ -300,6 +590,7 @@ public class InvoiceService {
         patientVisit.amountPaid = invoice.amountPaid;
         patientVisit.subTotal = invoice.subTotal;
         patientVisit.totalAmount = invoice.totalAmount;
+        patientVisit.totalSell = invoice.totalAmount;
         patientVisitRepository.persist(patientVisit);
     }
 
@@ -409,7 +700,7 @@ public class InvoiceService {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             PdfWriter pdfWriter = new PdfWriter(baos);
             PdfDocument pdfDocument = new PdfDocument(pdfWriter);
-            pdfDocument.addEventHandler(PdfDocumentEvent.END_PAGE, new FooterHelperInvoice());
+            pdfDocument.addEventHandler(PdfDocumentEvent.END_PAGE, new FooterHelperInvoice(facilityBranding()));
 
             Document document = new Document(pdfDocument);
             document.setMargins(36, 36, 90, 36);
@@ -429,7 +720,7 @@ public class InvoiceService {
                                     .setTextAlignment(TextAlignment.CENTER)
                             )
                     )
-                    .add(new Paragraph("Department of Finance - Veneranda Medical (A subsidiary of Veneranda Hospital)")
+                    .add(new Paragraph(facilityBranding().financeHeaderLine())
                             .setFontSize(7)
                             //.setItalic()
                             .setMarginTop(3)
@@ -868,6 +1159,11 @@ public class InvoiceService {
                 "visit.id = ?1 ORDER BY id DESC",
                 visitId
         ).list();
+
+        List<VisitSundry> visitSundries = VisitSundry.find(
+                "patientVisitId = ?1 ORDER BY id DESC",
+                visitId
+        ).list();
     
     
         /* =========================
@@ -891,8 +1187,19 @@ public class InvoiceService {
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
     
         BigDecimal treatmentSellingTotal = treatmentGive.stream()
-                .map(t -> t.totalAmount)
+                .filter(TreatmentRequested::countsTowardInvoice)
+                .map(t -> t.totalAmount != null ? t.totalAmount : BigDecimal.ZERO)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal sundriesSellingTotal = visitSundries.stream()
+                .map(this::resolveVisitSundrySellingTotal)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal sundriesCostTotal = visitSundries.stream()
+                .map(this::resolveVisitSundryCostTotal)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        treatmentSellingTotal = treatmentSellingTotal.add(sundriesSellingTotal);
     
         BigDecimal invoiceSubtotal = labTotalAmount
                 .add(ultrasoundTotalAmount)
@@ -916,6 +1223,7 @@ public class InvoiceService {
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
     
         BigDecimal treatmentCostTotal = treatmentGive.stream()
+                .filter(TreatmentRequested::countsTowardInvoice)
                 .map(t -> {
                     // Use zero if unitBuy or quantity is null
                     if (t.unitBuy != null && t.quantity != null) {
@@ -923,9 +1231,15 @@ public class InvoiceService {
                     }
                     return BigDecimal.ZERO; // Return zero when unitBuy is null
                 })
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+                .reduce(BigDecimal.ZERO, BigDecimal::add)
+                .add(sundriesCostTotal);
     
         BigDecimal grandCostTotal = procedureCostTotal.add(treatmentCostTotal);
+
+        BigDecimal procedureSellingTotal = labTotalAmount
+                .add(ultrasoundTotalAmount)
+                .add(consultationFee)
+                .add(otherProcedureTotalAmount);
     
     
         /* =========================
@@ -1003,6 +1317,14 @@ public class InvoiceService {
         visit.totalAmount = invoice.totalAmount;
         visit.amountPaid = invoice.amountPaid;
         visit.balanceDue = invoice.balanceDue;
+        syncVisitFinancialBreakdown(
+                visit,
+                invoice,
+                procedureSellingTotal,
+                treatmentSellingTotal,
+                procedureCostTotal,
+                treatmentCostTotal,
+                grandCostTotal);
     
         patientVisitRepository.persist(visit);
     
@@ -1050,11 +1372,94 @@ public class InvoiceService {
         totalCostMap.put("ConsultationFee", consultationFee);
         totalCostMap.put("OtherProcedureCost", otherProcedureTotalAmount);
         totalCostMap.put("TreatmentTotalCost", treatmentSellingTotal);
+        totalCostMap.put("ProcedureSellingTotal", procedureSellingTotal);
+        totalCostMap.put("TreatmentSellingTotal", treatmentSellingTotal);
+        totalCostMap.put("ProcedureCostTotal", procedureCostTotal);
+        totalCostMap.put("TreatmentCostTotal", treatmentCostTotal);
 
 
         
     
         return totalCostMap;
+    }
+
+    private static BigDecimal nz(BigDecimal value) {
+        return value != null ? value : BigDecimal.ZERO;
+    }
+
+    private static void syncVisitFinancialBreakdown(
+            PatientVisit visit,
+            Invoice invoice,
+            BigDecimal procedureSellingTotal,
+            BigDecimal treatmentSellingTotal,
+            BigDecimal procedureCostTotal,
+            BigDecimal treatmentCostTotal,
+            BigDecimal grandCostTotal
+    ) {
+        if (visit == null || invoice == null) {
+            return;
+        }
+        visit.subTotal = invoice.subTotal;
+        visit.totalAmount = invoice.totalAmount;
+        visit.totalSell = invoice.totalAmount;
+        visit.tax = nz(invoice.tax);
+        visit.discount = nz(invoice.discount);
+        visit.amountPaid = invoice.amountPaid;
+        visit.balanceDue = invoice.balanceDue;
+        visit.totalCost = nz(grandCostTotal);
+        visit.treatmentTotalSell = nz(treatmentSellingTotal);
+        visit.totalSellForProcedure = nz(procedureSellingTotal);
+        visit.totalCostOfProcedures = nz(procedureCostTotal);
+        visit.totalCostOfTreatment = nz(treatmentCostTotal);
+    }
+
+    private BigDecimal resolveVisitSundrySellingTotal(VisitSundry row) {
+        if (row == null) {
+            return BigDecimal.ZERO;
+        }
+        if (row.lineTotal != null && row.lineTotal.compareTo(BigDecimal.ZERO) > 0) {
+            return row.lineTotal;
+        }
+        BigDecimal qty = nz(row.quantityUsed);
+        if (row.unitSellingPrice != null && row.unitSellingPrice.compareTo(BigDecimal.ZERO) > 0) {
+            return qty.multiply(row.unitSellingPrice);
+        }
+        if (row.stockBatchId != null) {
+            StockBatch batch = StockBatch.findById(row.stockBatchId);
+            if (batch != null && batch.unitSellingPrice != null) {
+                return qty.multiply(batch.unitSellingPrice);
+            }
+        }
+        if (row.itemId != null) {
+            Item item = Item.findById(row.itemId);
+            if (item != null && item.sellingPrice != null) {
+                return qty.multiply(item.sellingPrice);
+            }
+        }
+        return BigDecimal.ZERO;
+    }
+
+    private BigDecimal resolveVisitSundryCostTotal(VisitSundry row) {
+        if (row == null) {
+            return BigDecimal.ZERO;
+        }
+        BigDecimal qty = nz(row.quantityUsed);
+        if (row.unitCostPrice != null && row.unitCostPrice.compareTo(BigDecimal.ZERO) > 0) {
+            return qty.multiply(row.unitCostPrice);
+        }
+        if (row.stockBatchId != null) {
+            StockBatch batch = StockBatch.findById(row.stockBatchId);
+            if (batch != null && batch.unitCostPrice != null) {
+                return qty.multiply(batch.unitCostPrice);
+            }
+        }
+        if (row.itemId != null) {
+            Item item = Item.findById(row.itemId);
+            if (item != null && item.costPrice != null) {
+                return qty.multiply(item.costPrice);
+            }
+        }
+        return BigDecimal.ZERO;
     }
     
 
@@ -1105,26 +1510,15 @@ public class InvoiceService {
 
 
 
-    public static Image getLogo() {
-        try {
-            // Load the image as a stream from the classpath
-            InputStream logoStream = Thread.currentThread().getContextClassLoader().getResourceAsStream("logo.png");
+    private Image getLogo() {
+        return facilityPdfLogoService.createLogoImage();
+    }
 
-            if (logoStream == null) {
-                throw new RuntimeException("Logo image not found in classpath.");
-            }
-
-            byte[] imageBytes = logoStream.readAllBytes(); // Java 9+; use IOUtils for Java 8
-            ImageData imageData = ImageDataFactory.create(imageBytes);
-
-            Image logo = new Image(imageData);
-            logo.scaleToFit(80, 80);
-            logo.setHorizontalAlignment(HorizontalAlignment.CENTER);
-
-            return logo;
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to load the logo image.", e);
+    private Image getLogoForInvoice(Invoice invoice) {
+        if (invoice != null && invoice.companyLogo != null && !invoice.companyLogo.isBlank()) {
+            return facilityPdfLogoService.createLogoImage(invoice.companyLogo);
         }
+        return getLogo();
     }
 
 
@@ -1202,7 +1596,7 @@ public class InvoiceService {
                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
                 PdfWriter pdfWriter = new PdfWriter(baos);
                 PdfDocument pdfDocument = new PdfDocument(pdfWriter);
-                pdfDocument.addEventHandler(PdfDocumentEvent.END_PAGE, new FooterHelperInvoice());
+                pdfDocument.addEventHandler(PdfDocumentEvent.END_PAGE, new FooterHelperInvoice(facilityBranding()));
     
                 Document document = new Document(pdfDocument);
                 document.setMargins(36, 36, 90, 36);
@@ -1222,7 +1616,7 @@ public class InvoiceService {
                                         .setTextAlignment(TextAlignment.CENTER)
                                 )
                         )
-                        .add(new Paragraph("Department of Finance - Veneranda Medical (A subsidiary of Veneranda Hospital)")
+                        .add(new Paragraph(facilityBranding().financeHeaderLine())
                                 .setFontSize(7)
                                 //.setItalic()
                                 .setMarginTop(3)
@@ -1562,6 +1956,11 @@ public class InvoiceService {
 
         @Transactional
         public Response generateAndReturnMedicalStatementPdfForAvisit(Long visitId) {
+            return generateAndReturnMedicalStatementPdfForAvisit(visitId, null);
+        }
+
+        @Transactional
+        public Response generateAndReturnMedicalStatementPdfForAvisit(Long visitId, StatementPdfRequest request) {
             try {
                 // Find the patient visit
                 PatientVisit visit = PatientVisit.findById(visitId);
@@ -1603,8 +2002,10 @@ public class InvoiceService {
                     //invoice.invoiceStatus = "RECEIPT";
                     //invoiceRepository.persist(invoice);
                // } else {
-                    invoice.invoiceStatus = "SYSTEM GENERATED MEDICAL REPORT";
-                    invoiceRepository.persist(invoice);
+                String documentTitle = resolveStatementDocumentTitle(request);
+                invoice.invoiceStatus = documentTitle;
+                invoice.documentTitle = documentTitle;
+                invoiceRepository.persist(invoice);
                 //}
     
     
@@ -1612,10 +2013,14 @@ public class InvoiceService {
                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
                 PdfWriter pdfWriter = new PdfWriter(baos);
                 PdfDocument pdfDocument = new PdfDocument(pdfWriter);
-                pdfDocument.addEventHandler(PdfDocumentEvent.END_PAGE, new FooterHelperInvoice());
+                boolean includeFooter = resolveIncludeFooter(request);
+                if (includeFooter) {
+                    pdfDocument.addEventHandler(PdfDocumentEvent.END_PAGE, new FooterHelperInvoice(facilityBranding()));
+                }
     
                 Document document = new Document(pdfDocument);
-                document.setMargins(36, 36, 90, 36);
+                // Reserve bottom space for footer only when it is included
+                document.setMargins(36, 36, includeFooter ? 90 : 36, 36);
     
     
     
@@ -1626,13 +2031,13 @@ public class InvoiceService {
                         .add(new Div()
                                 .setBorderBottom(new SolidBorder(1)) // Underline (1px solid line)
                                 .setPaddingBottom(2) // Space between text and underline
-                                .add(new Paragraph(invoice.invoiceStatus)
+                                .add(new Paragraph(documentTitle != null ? documentTitle : "SYSTEM GENERATED MEDICAL REPORT")
                                         .setBold()
                                         .setFontSize(11)
                                         .setTextAlignment(TextAlignment.CENTER)
                                 )
                         )
-                        .add(new Paragraph("Department of Medical Records-Veneranda Medical (A subsidiary of Veneranda HealthCare) Address:Bugogo Town Council-Kyegegwa.\n For inquiries / suggestions call: 0784411848 / 0704968736. Email:venerandahospital@gmail.com.")
+                        .add(new Paragraph(facilityBranding().medicalRecordsTitleBlock())
                                 .setFontSize(8)
                                 //.setItalic()
                                 .setMarginTop(3)
@@ -1649,65 +2054,80 @@ public class InvoiceService {
                 Table headerTable = new Table(new float[]{1, 1, 1, 2, 1});
                 headerTable.setWidth(UnitValue.createPercentValue(100));
                 headerTable.addCell(new Cell()
-                        .add(getLogo().setWidth(79).setHeight(68))
+                        .add(getLogo().setWidth(55).setHeight(47))
                         .setBorder(Border.NO_BORDER)
                         .setHorizontalAlignment(HorizontalAlignment.LEFT)
                         .setVerticalAlignment(VerticalAlignment.TOP)
                         .setPaddingTop(-7)
-                        .setPaddingLeft(-27)
+                        .setPaddingLeft(-12)
+                        .setPaddingRight(0)
                 );
-                headerTable.addCell(new Cell()
-                        .add(new Paragraph("CLIENT NAME: ").setFontSize(8).setTextAlignment(TextAlignment.LEFT))
-                        //.add(new Paragraph("BALANCE DUE: ").setFontSize(8).setTextAlignment(TextAlignment.LEFT))
-                        .add(new Paragraph("ADDRESS: ").setFontSize(8).setTextAlignment(TextAlignment.LEFT))
-                        .add(new Paragraph("NEXT OF KEEN: ").setFontSize(8).setTextAlignment(TextAlignment.LEFT))
-    
-                        .setBorder(Border.NO_BORDER)
-                );
+                boolean includeNextOfKin = resolveIncludeNextOfKin(request);
+                boolean includePatientName = resolveIncludePatientName(request);
+                boolean includePatientAddress = resolveIncludePatientAddress(request);
+                boolean includePatientGender = resolveIncludePatientGender(request);
+                boolean includePatientAge = resolveIncludePatientAge(request);
+                boolean includePatientContact = resolveIncludePatientContact(request);
+                boolean includeVisitDate = resolveIncludeVisitDate(request);
+                boolean includeBalanceDue = resolveIncludeBalanceDue(request);
+
+                Cell headerLabelCell = new Cell().setBorder(Border.NO_BORDER);
+                Cell headerValueCell = new Cell().setBorder(Border.NO_BORDER);
+                Cell rightLabelCell = new Cell().setBorder(Border.NO_BORDER);
+                Cell rightValueCell = new Cell().setBorder(Border.NO_BORDER);
+
                 String patientName = patient.patientFirstName.toUpperCase() + " " + patient.patientSecondName.toUpperCase();
                 String nextOfKeen = patient.nextOfKinName != null ? patient.nextOfKinName.toUpperCase() : "N/A";
-                if(nextOfKeen.equals(null)){
-                    nextOfKeen = "N/A";
-                }
-    
                 BigDecimal balance = patient.totalAmountDue;
                 String gender = patient.patientGender != null ? patient.patientGender.toUpperCase() : "N/A";
-                
-                headerTable.addCell(new Cell()
-                        .add(new Paragraph(patientName).setFontSize(8).setTextAlignment(TextAlignment.LEFT))
-                        //.add(new Paragraph(String.valueOf(balance)).setFontSize(8))
-                        .add(new Paragraph(Optional.ofNullable(invoice.visit.patient)
-                                .map(p -> p.patientAddress +
-                                        (p.getPatientGroup() != null
-                                                ? " (" + p.patientGroup.groupNameShortForm + ")"
-                                                : ""))
-                                .map(String::toUpperCase)
-                                .orElse("")).setFontSize(8))
-                        .add(new Paragraph(nextOfKeen).setFontSize(8).setTextAlignment(TextAlignment.LEFT))
-    
-                        .setBorder(Border.NO_BORDER)
-                );
-                headerTable.addCell(new Cell()
-                        .add(new Paragraph("GENDER: " + gender).setFontSize(8))
-                        .add(new Paragraph("CONTACT: ").setFontSize(8))
-                        .add(new Paragraph("VISIT DATE: ").setFontSize(8))
-                        .add(new Paragraph("BALANCE DUE: ").setFontSize(8))
-    
-                        .setBorder(Border.NO_BORDER)
-                );
-                String ageText = patient.patientAge != null 
+                String ageText = patient.patientAge != null
                         ? patient.patientAge.toPlainString() + " YRS"
                         : "N/A";
-                
-                headerTable.addCell(new Cell()
-                        .add(new Paragraph("AGE: " + ageText).setFontSize(8).setTextAlignment(TextAlignment.RIGHT))
-                        .add(new Paragraph(String.valueOf(patient.patientContact)).setFontSize(8).setTextAlignment(TextAlignment.RIGHT))
-                        .add(new Paragraph(String.valueOf(visit.visitDate)).setFontSize(8).setTextAlignment(TextAlignment.RIGHT))
-                        .add(new Paragraph(String.valueOf(balance)).setFontSize(8).setTextAlignment(TextAlignment.RIGHT))
-    
-                        .setBorder(Border.NO_BORDER)
-                        
-                );
+                String addressText = Optional.ofNullable(invoice.visit.patient)
+                        .map(p -> p.patientAddress +
+                                (p.getPatientGroup() != null
+                                        ? " (" + p.patientGroup.groupNameShortForm + ")"
+                                        : ""))
+                        .map(String::toUpperCase)
+                        .orElse("");
+
+                if (includePatientName) {
+                    headerLabelCell.add(new Paragraph("CLIENT NAME: ").setFontSize(8).setTextAlignment(TextAlignment.LEFT));
+                    headerValueCell.add(new Paragraph(patientName).setFontSize(8).setTextAlignment(TextAlignment.LEFT));
+                }
+                if (includePatientAddress) {
+                    headerLabelCell.add(new Paragraph("ADDRESS: ").setFontSize(8).setTextAlignment(TextAlignment.LEFT));
+                    headerValueCell.add(new Paragraph(addressText).setFontSize(8));
+                }
+                if (includeNextOfKin) {
+                    headerLabelCell.add(new Paragraph("NEXT OF KEEN: ").setFontSize(8).setTextAlignment(TextAlignment.LEFT));
+                    headerValueCell.add(new Paragraph(nextOfKeen).setFontSize(8).setTextAlignment(TextAlignment.LEFT));
+                }
+                if (includePatientGender) {
+                    rightLabelCell.add(new Paragraph("GENDER: ").setFontSize(8));
+                    rightValueCell.add(new Paragraph(gender).setFontSize(8).setTextAlignment(TextAlignment.RIGHT));
+                }
+                if (includePatientAge) {
+                    rightLabelCell.add(new Paragraph("AGE: ").setFontSize(8));
+                    rightValueCell.add(new Paragraph(ageText).setFontSize(8).setTextAlignment(TextAlignment.RIGHT));
+                }
+                if (includePatientContact) {
+                    rightLabelCell.add(new Paragraph("CONTACT: ").setFontSize(8));
+                    rightValueCell.add(new Paragraph(String.valueOf(patient.patientContact)).setFontSize(8).setTextAlignment(TextAlignment.RIGHT));
+                }
+                if (includeVisitDate) {
+                    rightLabelCell.add(new Paragraph("VISIT DATE: ").setFontSize(8));
+                    rightValueCell.add(new Paragraph(String.valueOf(visit.visitDate)).setFontSize(8).setTextAlignment(TextAlignment.RIGHT));
+                }
+                if (includeBalanceDue) {
+                    rightLabelCell.add(new Paragraph("BALANCE DUE: ").setFontSize(8));
+                    rightValueCell.add(new Paragraph(String.valueOf(balance)).setFontSize(8).setTextAlignment(TextAlignment.RIGHT));
+                }
+
+                headerTable.addCell(headerLabelCell);
+                headerTable.addCell(headerValueCell);
+                headerTable.addCell(rightLabelCell);
+                headerTable.addCell(rightValueCell);
         
                 headerTable.setBorderBottom(new SolidBorder(1));
                 document.add(headerTable);
@@ -1745,18 +2165,21 @@ public class InvoiceService {
                             .setBorder(Border.NO_BORDER));
     
                     for (Consultation consultation : invoice.visit.getConsultation()) {
-                        String chiefComplaint = consultation.chiefComplaint != null
-                                ? consultation.chiefComplaint.trim()
-                                : "";
+                        String pcText = formatPresentingComplaints(consultation.presentingComplaints);
+                        if (pcText.isEmpty()) {
+                            pcText = consultation.chiefComplaint != null
+                                    ? consultation.chiefComplaint.trim()
+                                    : "";
+                        }
                         String vitals = vitalsSummary;
-    
-                        if (chiefComplaint.isEmpty() && vitals.isEmpty()) {
+
+                        if (pcText.isEmpty() && vitals.isEmpty()) {
                             continue;
                         }
-    
+
                         com.itextpdf.kernel.colors.Color rowColor = ColorConstants.WHITE;
-    
-                        complaintsTable.addCell(createCell(chiefComplaint.toUpperCase(), 1, TextAlignment.LEFT)
+
+                        complaintsTable.addCell(createCell(pcText.toUpperCase(), 1, TextAlignment.LEFT)
                                 .setFontSize(7)
                                 .setBackgroundColor(rowColor)
                                 .setBorder(Border.NO_BORDER)
@@ -1772,71 +2195,9 @@ public class InvoiceService {
                     document.add(complaintsTable);
                 }
     
-                boolean hasProcedureRows = invoice.visit.getProceduresRequested() != null
-                        && !invoice.visit.getProceduresRequested().isEmpty();
-                if (hasProcedureRows) {
-                    float[] procedureColumnWidths = {4f, 2f, 2f, 4f};
-                    Table procedureTable = new Table(UnitValue.createPercentArray(procedureColumnWidths));
-                    procedureTable.setWidth(UnitValue.createPercentValue(100));
-    
-                    procedureTable.addCell(createCell("SERVICES REQUESTED", 1, TextAlignment.LEFT)
-                            .setBold()
-                            .setFontSize(7)
-                            .setFontColor(ColorConstants.WHITE)
-                            .setBackgroundColor(ColorConstants.DARK_GRAY)
-                            .setBorder(Border.NO_BORDER));
-    
-                    procedureTable.addCell(createCell("REQUESTED BY", 1, TextAlignment.LEFT)
-                            .setBold()
-                            .setFontSize(7)
-                            .setFontColor(ColorConstants.WHITE)
-                            .setBackgroundColor(ColorConstants.DARK_GRAY)
-                            .setBorder(Border.NO_BORDER));
-    
-                    procedureTable.addCell(createCell("DONE BY", 1, TextAlignment.LEFT)
-                            .setBold()
-                            .setFontSize(7)
-                            .setFontColor(ColorConstants.WHITE)
-                            .setBackgroundColor(ColorConstants.DARK_GRAY)
-                            .setBorder(Border.NO_BORDER));
-    
-                    procedureTable.addCell(createCell("SUMMARY OF RESULTS / CONCLUSION", 1, TextAlignment.RIGHT)
-                            .setBold()
-                            .setFontSize(7)
-                            .setFontColor(ColorConstants.WHITE)
-                            .setBackgroundColor(ColorConstants.DARK_GRAY)
-                            .setBorder(Border.NO_BORDER));
-    
-                    for (ProcedureRequested procedureRequested : invoice.visit.getProceduresRequested()) {
-                        com.itextpdf.kernel.colors.Color rowColor = ColorConstants.WHITE;
-    
-                        procedureTable.addCell(createCell(procedureRequested.procedureRequestedName != null ? procedureRequested.procedureRequestedName.toUpperCase() : "", 1, TextAlignment.LEFT)
-                                .setFontSize(7)
-                                .setBackgroundColor(rowColor)
-                                .setBorder(Border.NO_BORDER)
-                                .setBorderBottom(new SolidBorder(1)));
-    
-                        procedureTable.addCell(createCell(ellipsizeWithTwoDots(procedureRequested.orderedBy, 12), 1, TextAlignment.LEFT)
-                                .setFontSize(7)
-                                .setBackgroundColor(rowColor)
-                                .setBorder(Border.NO_BORDER)
-                                .setBorderBottom(new SolidBorder(1)));
-    
-                        procedureTable.addCell(createCell(ellipsizeWithTwoDots(procedureRequested.doneBy, 12), 1, TextAlignment.LEFT)
-                                .setFontSize(7)
-                                .setBackgroundColor(rowColor)
-                                .setBorder(Border.NO_BORDER)
-                                .setBorderBottom(new SolidBorder(1)));
-    
-                        procedureTable.addCell(createCell(String.valueOf(procedureRequested.report).toUpperCase(), 1, TextAlignment.RIGHT)
-                                .setFontSize(7)
-                                .setBackgroundColor(rowColor)
-                                .setBorder(Border.NO_BORDER)
-                                .setBorderBottom(new SolidBorder(1)));
-    
-                    }
-                    document.add(procedureTable);
-                }
+                List<ProcedureRequested> statementProcedures = resolveStatementProcedures(invoice.visit, request);
+                boolean includeAmountColumns = resolveIncludeAmountColumns(request);
+                addStatementServicesTable(document, statementProcedures, includeAmountColumns);
     
                 // Diagnosis table (placed after services requested table)
                 boolean hasDiagnosisRows = invoice.visit.getConsultation() != null
@@ -1872,119 +2233,85 @@ public class InvoiceService {
                     document.add(diagnosisTable);
                 }
     
-                boolean hasTreatmentRows = invoice.visit.getTreatmentRequested() != null
-                        && !invoice.visit.getTreatmentRequested().isEmpty();
-                if (hasTreatmentRows) {
-                    float[] treatmentColumnWidths = {5f, 4f};
-                    Table treatmentTable = new Table(UnitValue.createPercentArray(treatmentColumnWidths));
-                    treatmentTable.setWidth(UnitValue.createPercentValue(100));
-    
-                    treatmentTable.addCell(createCell("DRUG / ITEM / TREATMENT", 1, TextAlignment.LEFT)
-                            .setBold()
-                            .setFontSize(7)
-                            .setFontColor(ColorConstants.WHITE)
-                            .setBackgroundColor(ColorConstants.DARK_GRAY)
-                            .setBorder(Border.NO_BORDER));
-    
-                    treatmentTable.addCell(createCell("DESCRIPTION / NOTES", 1, TextAlignment.RIGHT)
-                            .setBold()
-                            .setFontSize(7)
-                            .setFontColor(ColorConstants.WHITE)
-                            .setBackgroundColor(ColorConstants.DARK_GRAY)
-                            .setBorder(Border.NO_BORDER));
-    
-                    for (TreatmentRequested treatmentRequested : invoice.visit.getTreatmentRequested()) {
-                        com.itextpdf.kernel.colors.Color rowColor = ColorConstants.WHITE;
-    
-                        treatmentTable.addCell(createCell(treatmentRequested.itemName.toUpperCase(), 1, TextAlignment.LEFT)
-                                .setFontSize(7)
-                                .setBackgroundColor(rowColor)
-                                .setBorder(Border.NO_BORDER)
-                                .setBorderBottom(new SolidBorder(1)));
-    
-                        treatmentTable.addCell(createCell(plainNumber(treatmentRequested.amountPerFrequencyValue) + " " + treatmentRequested.amountPerFrequencyUnit + " "+ plainNumber(treatmentRequested.frequencyValue)+" " + "X"+" "+treatmentRequested.frequencyUnit+" "+"FOR"+" "+plainNumber(treatmentRequested.durationValue)+" "+treatmentRequested.durationUnit, 1, TextAlignment.RIGHT)
-                                .setFontSize(7)
-                                .setBackgroundColor(rowColor)
-                                .setBorder(Border.NO_BORDER)
-                                .setBorderBottom(new SolidBorder(1)));
-    
-                    }
-                    document.add(treatmentTable);
-                }
+                List<TreatmentRequested> statementTreatments = resolveStatementTreatments(invoice.visit, request);
+                addStatementDrugsTable(document, statementTreatments, includeAmountColumns);
     
                 // Final table: finances and payments (one row of values)
-                Table totalsTable = new Table(UnitValue.createPercentArray(new float[]{2f, 2f, 2f, 2f, 2f, 2f}));
-                totalsTable.setWidth(UnitValue.createPercentValue(100));
-    
-                totalsTable.addCell(createCell("SUBTOTAL", 1, TextAlignment.CENTER)
-                        .setBold()
-                        .setFontSize(7)
-                        .setFontColor(ColorConstants.WHITE)
-                        .setBackgroundColor(ColorConstants.DARK_GRAY)
-                        .setBorder(Border.NO_BORDER));
-                totalsTable.addCell(createCell("TOTAL AMOUNT", 1, TextAlignment.CENTER)
-                        .setBold()
-                        .setFontSize(7)
-                        .setFontColor(ColorConstants.WHITE)
-                        .setBackgroundColor(ColorConstants.DARK_GRAY)
-                        .setBorder(Border.NO_BORDER));
-                totalsTable.addCell(createCell("DISCOUNT", 1, TextAlignment.CENTER)
-                        .setBold()
-                        .setFontSize(7)
-                        .setFontColor(ColorConstants.WHITE)
-                        .setBackgroundColor(ColorConstants.DARK_GRAY)
-                        .setBorder(Border.NO_BORDER));
-                totalsTable.addCell(createCell("TAX", 1, TextAlignment.CENTER)
-                        .setBold()
-                        .setFontSize(7)
-                        .setFontColor(ColorConstants.WHITE)
-                        .setBackgroundColor(ColorConstants.DARK_GRAY)
-                        .setBorder(Border.NO_BORDER));
-                totalsTable.addCell(createCell("AMOUNT PAID", 1, TextAlignment.CENTER)
-                        .setBold()
-                        .setFontSize(7)
-                        .setFontColor(ColorConstants.WHITE)
-                        .setBackgroundColor(ColorConstants.DARK_GRAY)
-                        .setBorder(Border.NO_BORDER));
-                totalsTable.addCell(createCell("BALANCE", 1, TextAlignment.CENTER)
-                        .setBold()
-                        .setFontSize(7)
-                        .setFontColor(ColorConstants.WHITE)
-                        .setBackgroundColor(ColorConstants.DARK_GRAY)
-                        .setBorder(Border.NO_BORDER));
-    
-                totalsTable.addCell(createCell(plainNumber(invoice.subTotal), 1, TextAlignment.CENTER)
-                        .setFontSize(7)
-                        .setBackgroundColor(ColorConstants.WHITE)
-                        .setBorder(Border.NO_BORDER)
-                        .setBorderBottom(new SolidBorder(1)));
-                totalsTable.addCell(createCell(plainNumber(invoice.totalAmount), 1, TextAlignment.CENTER)
-                        .setFontSize(7)
-                        .setBackgroundColor(ColorConstants.WHITE)
-                        .setBorder(Border.NO_BORDER)
-                        .setBorderBottom(new SolidBorder(1)));
-                totalsTable.addCell(createCell(plainNumber(invoice.discount), 1, TextAlignment.CENTER)
-                        .setFontSize(7)
-                        .setBackgroundColor(ColorConstants.WHITE)
-                        .setBorder(Border.NO_BORDER)
-                        .setBorderBottom(new SolidBorder(1)));
-                totalsTable.addCell(createCell(plainNumber(invoice.tax), 1, TextAlignment.CENTER)
-                        .setFontSize(7)
-                        .setBackgroundColor(ColorConstants.WHITE)
-                        .setBorder(Border.NO_BORDER)
-                        .setBorderBottom(new SolidBorder(1)));
-                totalsTable.addCell(createCell(plainNumber(invoice.amountPaid), 1, TextAlignment.CENTER)
-                        .setFontSize(7)
-                        .setBackgroundColor(ColorConstants.WHITE)
-                        .setBorder(Border.NO_BORDER)
-                        .setBorderBottom(new SolidBorder(1)));
-                totalsTable.addCell(createCell(plainNumber(invoice.balanceDue), 1, TextAlignment.CENTER)
-                        .setFontSize(7)
-                        .setBackgroundColor(ColorConstants.WHITE)
-                        .setBorder(Border.NO_BORDER)
-                        .setBorderBottom(new SolidBorder(1)));
-    
-                document.add(totalsTable);
+                boolean includePaymentTable = resolveIncludePaymentTable(request);
+                if (includePaymentTable) {
+                    Table totalsTable = new Table(UnitValue.createPercentArray(new float[]{2f, 2f, 2f, 2f, 2f, 2f}));
+                    totalsTable.setWidth(UnitValue.createPercentValue(100));
+
+                    totalsTable.addCell(createCell("SUBTOTAL", 1, TextAlignment.CENTER)
+                            .setBold()
+                            .setFontSize(7)
+                            .setFontColor(ColorConstants.WHITE)
+                            .setBackgroundColor(ColorConstants.DARK_GRAY)
+                            .setBorder(Border.NO_BORDER));
+                    totalsTable.addCell(createCell("TOTAL AMOUNT", 1, TextAlignment.CENTER)
+                            .setBold()
+                            .setFontSize(7)
+                            .setFontColor(ColorConstants.WHITE)
+                            .setBackgroundColor(ColorConstants.DARK_GRAY)
+                            .setBorder(Border.NO_BORDER));
+                    totalsTable.addCell(createCell("DISCOUNT", 1, TextAlignment.CENTER)
+                            .setBold()
+                            .setFontSize(7)
+                            .setFontColor(ColorConstants.WHITE)
+                            .setBackgroundColor(ColorConstants.DARK_GRAY)
+                            .setBorder(Border.NO_BORDER));
+                    totalsTable.addCell(createCell("TAX", 1, TextAlignment.CENTER)
+                            .setBold()
+                            .setFontSize(7)
+                            .setFontColor(ColorConstants.WHITE)
+                            .setBackgroundColor(ColorConstants.DARK_GRAY)
+                            .setBorder(Border.NO_BORDER));
+                    totalsTable.addCell(createCell("AMOUNT PAID", 1, TextAlignment.CENTER)
+                            .setBold()
+                            .setFontSize(7)
+                            .setFontColor(ColorConstants.WHITE)
+                            .setBackgroundColor(ColorConstants.DARK_GRAY)
+                            .setBorder(Border.NO_BORDER));
+                    totalsTable.addCell(createCell("BALANCE", 1, TextAlignment.CENTER)
+                            .setBold()
+                            .setFontSize(7)
+                            .setFontColor(ColorConstants.WHITE)
+                            .setBackgroundColor(ColorConstants.DARK_GRAY)
+                            .setBorder(Border.NO_BORDER));
+
+                    totalsTable.addCell(createCell(plainNumber(invoice.subTotal), 1, TextAlignment.CENTER)
+                            .setFontSize(7)
+                            .setBackgroundColor(ColorConstants.WHITE)
+                            .setBorder(Border.NO_BORDER)
+                            .setBorderBottom(new SolidBorder(1)));
+                    totalsTable.addCell(createCell(plainNumber(invoice.totalAmount), 1, TextAlignment.CENTER)
+                            .setFontSize(7)
+                            .setBackgroundColor(ColorConstants.WHITE)
+                            .setBorder(Border.NO_BORDER)
+                            .setBorderBottom(new SolidBorder(1)));
+                    totalsTable.addCell(createCell(plainNumber(invoice.discount), 1, TextAlignment.CENTER)
+                            .setFontSize(7)
+                            .setBackgroundColor(ColorConstants.WHITE)
+                            .setBorder(Border.NO_BORDER)
+                            .setBorderBottom(new SolidBorder(1)));
+                    totalsTable.addCell(createCell(plainNumber(invoice.tax), 1, TextAlignment.CENTER)
+                            .setFontSize(7)
+                            .setBackgroundColor(ColorConstants.WHITE)
+                            .setBorder(Border.NO_BORDER)
+                            .setBorderBottom(new SolidBorder(1)));
+                    totalsTable.addCell(createCell(plainNumber(invoice.amountPaid), 1, TextAlignment.CENTER)
+                            .setFontSize(7)
+                            .setBackgroundColor(ColorConstants.WHITE)
+                            .setBorder(Border.NO_BORDER)
+                            .setBorderBottom(new SolidBorder(1)));
+                    totalsTable.addCell(createCell(plainNumber(invoice.balanceDue), 1, TextAlignment.CENTER)
+                            .setFontSize(7)
+                            .setBackgroundColor(ColorConstants.WHITE)
+                            .setBorder(Border.NO_BORDER)
+                            .setBorderBottom(new SolidBorder(1)));
+
+                    document.add(totalsTable);
+                }
     
                 // Attending clinician / doctor table
                 String attendingClinician = "N/A";
@@ -2115,7 +2442,7 @@ public class InvoiceService {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             PdfWriter pdfWriter = new PdfWriter(baos);
             PdfDocument pdfDocument = new PdfDocument(pdfWriter);
-            pdfDocument.addEventHandler(PdfDocumentEvent.END_PAGE, new FooterHelperInvoice());
+            pdfDocument.addEventHandler(PdfDocumentEvent.END_PAGE, new FooterHelperInvoice(facilityBranding()));
 
             Document document = new Document(pdfDocument);
             document.setMargins(36, 36, 90, 36);
@@ -2135,7 +2462,7 @@ public class InvoiceService {
                                     .setTextAlignment(TextAlignment.CENTER)
                             )
                     )
-                    .add(new Paragraph("Department of Medical Records-Veneranda Medical (A subsidiary of Veneranda HealthCare) Address:Bugogo Town Council-Kyegegwa.\n For inquiries / suggestions call: 0784411848 / 0704968736. Email:venerandahospital@gmail.com.")
+                    .add(new Paragraph(facilityBranding().medicalRecordsTitleBlock())
                             .setFontSize(8)
                             //.setItalic()
                             .setMarginTop(3)
@@ -2152,12 +2479,13 @@ public class InvoiceService {
             Table headerTable = new Table(new float[]{1, 1, 1, 2, 1});
             headerTable.setWidth(UnitValue.createPercentValue(100));
             headerTable.addCell(new Cell()
-                    .add(getLogo().setWidth(79).setHeight(68))
+                    .add(getLogo().setWidth(55).setHeight(47))
                     .setBorder(Border.NO_BORDER)
                     .setHorizontalAlignment(HorizontalAlignment.LEFT)
                     .setVerticalAlignment(VerticalAlignment.TOP)
                     .setPaddingTop(-7)
-                    .setPaddingLeft(-27)
+                    .setPaddingLeft(-12)
+                    .setPaddingRight(0)
             );
             headerTable.addCell(new Cell()
                     .add(new Paragraph("CLIENT NAME: ").setFontSize(8).setTextAlignment(TextAlignment.LEFT))
@@ -2248,18 +2576,21 @@ public class InvoiceService {
                         .setBorder(Border.NO_BORDER));
 
                 for (Consultation consultation : invoice.visit.getConsultation()) {
-                    String chiefComplaint = consultation.chiefComplaint != null
-                            ? consultation.chiefComplaint.trim()
-                            : "";
+                    String pcText = formatPresentingComplaints(consultation.presentingComplaints);
+                    if (pcText.isEmpty()) {
+                        pcText = consultation.chiefComplaint != null
+                                ? consultation.chiefComplaint.trim()
+                                : "";
+                    }
                     String vitals = vitalsSummary;
 
-                    if (chiefComplaint.isEmpty() && vitals.isEmpty()) {
+                    if (pcText.isEmpty() && vitals.isEmpty()) {
                         continue;
                     }
 
                     com.itextpdf.kernel.colors.Color rowColor = ColorConstants.WHITE;
 
-                    complaintsTable.addCell(createCell(chiefComplaint.toUpperCase(), 1, TextAlignment.LEFT)
+                    complaintsTable.addCell(createCell(pcText.toUpperCase(), 1, TextAlignment.LEFT)
                             .setFontSize(7)
                             .setBackgroundColor(rowColor)
                             .setBorder(Border.NO_BORDER)
@@ -2275,71 +2606,10 @@ public class InvoiceService {
                 document.add(complaintsTable);
             }
 
-            boolean hasProcedureRows = invoice.visit.getProceduresRequested() != null
-                    && !invoice.visit.getProceduresRequested().isEmpty();
-            if (hasProcedureRows) {
-                float[] procedureColumnWidths = {4f, 2f, 2f, 4f};
-                Table procedureTable = new Table(UnitValue.createPercentArray(procedureColumnWidths));
-                procedureTable.setWidth(UnitValue.createPercentValue(100));
-
-                procedureTable.addCell(createCell("SERVICES REQUESTED", 1, TextAlignment.LEFT)
-                        .setBold()
-                        .setFontSize(7)
-                        .setFontColor(ColorConstants.WHITE)
-                        .setBackgroundColor(ColorConstants.DARK_GRAY)
-                        .setBorder(Border.NO_BORDER));
-
-                procedureTable.addCell(createCell("REQUESTED BY", 1, TextAlignment.LEFT)
-                        .setBold()
-                        .setFontSize(7)
-                        .setFontColor(ColorConstants.WHITE)
-                        .setBackgroundColor(ColorConstants.DARK_GRAY)
-                        .setBorder(Border.NO_BORDER));
-
-                procedureTable.addCell(createCell("DONE BY", 1, TextAlignment.LEFT)
-                        .setBold()
-                        .setFontSize(7)
-                        .setFontColor(ColorConstants.WHITE)
-                        .setBackgroundColor(ColorConstants.DARK_GRAY)
-                        .setBorder(Border.NO_BORDER));
-
-                procedureTable.addCell(createCell("SUMMARY OF RESULTS / CONCLUSION", 1, TextAlignment.RIGHT)
-                        .setBold()
-                        .setFontSize(7)
-                        .setFontColor(ColorConstants.WHITE)
-                        .setBackgroundColor(ColorConstants.DARK_GRAY)
-                        .setBorder(Border.NO_BORDER));
-
-                for (ProcedureRequested procedureRequested : invoice.visit.getProceduresRequested()) {
-                    com.itextpdf.kernel.colors.Color rowColor = ColorConstants.WHITE;
-
-                    procedureTable.addCell(createCell(procedureRequested.procedureRequestedName != null ? procedureRequested.procedureRequestedName.toUpperCase() : "", 1, TextAlignment.LEFT)
-                            .setFontSize(7)
-                            .setBackgroundColor(rowColor)
-                            .setBorder(Border.NO_BORDER)
-                            .setBorderBottom(new SolidBorder(1)));
-
-                    procedureTable.addCell(createCell(ellipsizeWithTwoDots(procedureRequested.orderedBy, 12), 1, TextAlignment.LEFT)
-                            .setFontSize(7)
-                            .setBackgroundColor(rowColor)
-                            .setBorder(Border.NO_BORDER)
-                            .setBorderBottom(new SolidBorder(1)));
-
-                    procedureTable.addCell(createCell(ellipsizeWithTwoDots(procedureRequested.doneBy, 12), 1, TextAlignment.LEFT)
-                            .setFontSize(7)
-                            .setBackgroundColor(rowColor)
-                            .setBorder(Border.NO_BORDER)
-                            .setBorderBottom(new SolidBorder(1)));
-
-                    procedureTable.addCell(createCell(String.valueOf(procedureRequested.report).toUpperCase(), 1, TextAlignment.RIGHT)
-                            .setFontSize(7)
-                            .setBackgroundColor(rowColor)
-                            .setBorder(Border.NO_BORDER)
-                            .setBorderBottom(new SolidBorder(1)));
-
-                }
-                document.add(procedureTable);
-            }
+            List<ProcedureRequested> invoiceProcedures = invoice.visit.getProceduresRequested() != null
+                    ? invoice.visit.getProceduresRequested()
+                    : List.of();
+            addStatementServicesTable(document, invoiceProcedures, true);
 
             // Diagnosis table (placed after services requested table)
             boolean hasDiagnosisRows = invoice.visit.getConsultation() != null
@@ -2375,45 +2645,10 @@ public class InvoiceService {
                 document.add(diagnosisTable);
             }
 
-            boolean hasTreatmentRows = invoice.visit.getTreatmentRequested() != null
-                    && !invoice.visit.getTreatmentRequested().isEmpty();
-            if (hasTreatmentRows) {
-                float[] treatmentColumnWidths = {5f, 4f};
-                Table treatmentTable = new Table(UnitValue.createPercentArray(treatmentColumnWidths));
-                treatmentTable.setWidth(UnitValue.createPercentValue(100));
-
-                treatmentTable.addCell(createCell("DRUG / ITEM / TREATMENT", 1, TextAlignment.LEFT)
-                        .setBold()
-                        .setFontSize(7)
-                        .setFontColor(ColorConstants.WHITE)
-                        .setBackgroundColor(ColorConstants.DARK_GRAY)
-                        .setBorder(Border.NO_BORDER));
-
-                treatmentTable.addCell(createCell("DESCRIPTION / NOTES", 1, TextAlignment.RIGHT)
-                        .setBold()
-                        .setFontSize(7)
-                        .setFontColor(ColorConstants.WHITE)
-                        .setBackgroundColor(ColorConstants.DARK_GRAY)
-                        .setBorder(Border.NO_BORDER));
-
-                for (TreatmentRequested treatmentRequested : invoice.visit.getTreatmentRequested()) {
-                    com.itextpdf.kernel.colors.Color rowColor = ColorConstants.WHITE;
-
-                    treatmentTable.addCell(createCell(treatmentRequested.itemName.toUpperCase(), 1, TextAlignment.LEFT)
-                            .setFontSize(7)
-                            .setBackgroundColor(rowColor)
-                            .setBorder(Border.NO_BORDER)
-                            .setBorderBottom(new SolidBorder(1)));
-
-                    treatmentTable.addCell(createCell(plainNumber(treatmentRequested.amountPerFrequencyValue) + " " + treatmentRequested.amountPerFrequencyUnit + " "+ plainNumber(treatmentRequested.frequencyValue)+" " + "X"+" "+treatmentRequested.frequencyUnit+" "+"FOR"+" "+plainNumber(treatmentRequested.durationValue)+" "+treatmentRequested.durationUnit, 1, TextAlignment.RIGHT)
-                            .setFontSize(7)
-                            .setBackgroundColor(rowColor)
-                            .setBorder(Border.NO_BORDER)
-                            .setBorderBottom(new SolidBorder(1)));
-
-                }
-                document.add(treatmentTable);
-            }
+            List<TreatmentRequested> invoiceTreatments = invoice.visit.getTreatmentRequested() != null
+                    ? invoice.visit.getTreatmentRequested()
+                    : List.of();
+            addStatementDrugsTable(document, invoiceTreatments, true);
 
             // Final table: finances and payments (one row of values)
             Table totalsTable = new Table(UnitValue.createPercentArray(new float[]{2f, 2f, 2f, 2f, 2f, 2f}));
@@ -2581,7 +2816,7 @@ public class InvoiceService {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             PdfWriter pdfWriter = new PdfWriter(baos);
             PdfDocument pdfDocument = new PdfDocument(pdfWriter);
-            pdfDocument.addEventHandler(PdfDocumentEvent.END_PAGE, new FooterHelperInvoice());
+            pdfDocument.addEventHandler(PdfDocumentEvent.END_PAGE, new FooterHelperInvoice(facilityBranding()));
 
             Document document = new Document(pdfDocument);
             // Tighter margins than statement PDF so lab tables fit one page when possible
@@ -2685,7 +2920,7 @@ public class InvoiceService {
                                 .setTextAlignment(TextAlignment.CENTER)
                         )
                 )
-                .add(new Paragraph("Department of Medical Records-Veneranda Medical (A subsidiary of Veneranda HealthCare) Address:Bugogo Town Council-Kyegegwa.\n For inquiries / suggestions call: 0784411848 / 0704968736. Email:venerandahospital@gmail.com.")
+                .add(new Paragraph(facilityBranding().medicalRecordsTitleBlock())
                         .setFontSize(6)
                         .setFixedLeading(7)
                         .setMarginTop(1)
@@ -3258,6 +3493,45 @@ public class InvoiceService {
             return normalized;
         }
         return normalized.substring(0, maxChars) + "..";
+    }
+
+    private String formatPresentingComplaints(List<PresentingComplaint> pcs) {
+        if (pcs == null || pcs.isEmpty()) {
+            return "";
+        }
+        StringJoiner joiner = new StringJoiner("; ");
+        for (PresentingComplaint pc : pcs) {
+            StringBuilder sb = new StringBuilder();
+            if (pc.severity != null && !pc.severity.trim().isEmpty()) {
+                sb.append(pc.severity.trim());
+            }
+            if (pc.site != null && !pc.site.trim().isEmpty()) {
+                if (sb.length() > 0) {
+                    sb.append(", ");
+                }
+                sb.append(pc.site.trim());
+            }
+            if (pc.complaint != null && !pc.complaint.trim().isEmpty()) {
+                if (sb.length() > 0) {
+                    sb.append(" ");
+                }
+                sb.append(pc.complaint.trim());
+            }
+            if (pc.durationValue != null && pc.durationUnit != null
+                    && !pc.durationUnit.trim().isEmpty()) {
+                sb.append(" FOR ");
+                sb.append(pc.durationValue);
+                sb.append(" ");
+                sb.append(pc.durationValue == 1 ? pc.durationUnit.trim() : pc.durationUnit.trim() + "s");
+            } else if (pc.duration != null && !pc.duration.trim().isEmpty()) {
+                sb.append(" FOR ");
+                sb.append(pc.duration.trim());
+            }
+            if (sb.length() > 0) {
+                joiner.add(sb.toString());
+            }
+        }
+        return joiner.toString();
     }
 
     private String formatVisitVitalsSummary(PatientVisit visit) {

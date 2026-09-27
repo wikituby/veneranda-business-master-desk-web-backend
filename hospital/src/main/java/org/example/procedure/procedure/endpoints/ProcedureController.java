@@ -22,19 +22,26 @@ import org.example.configuration.handler.ActionMessages;
 import org.example.configuration.handler.ResponseMessage;
 import org.example.procedure.procedure.services.payloads.requests.*;
 import org.example.procedure.procedure.services.ProcedureService;
+import org.example.procedure.procedure.services.ProcedureUnitSellingModelService;
 import org.example.procedure.procedure.services.payloads.responses.dtos.ProcedureDTO;
+import org.example.procedure.procedure.services.payloads.responses.dtos.ProcedureUnitSellingModelDTO;
+import org.example.inventory.stock.services.payloads.requests.UnitSellingModelRequest;
 
+import java.math.BigDecimal;
 import java.util.List;
 
-@Path("Patient-management")
+@Path("Client-management")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-@Tag(name = "Patient Management Module", description = "Patient Management")
+@Tag(name = "Client Management Module", description = "Client Management")
 
 public class ProcedureController {
 
     @Inject
     ProcedureService procedureService;
+
+    @Inject
+    ProcedureUnitSellingModelService procedureUnitSellingModelService;
 
     @POST
     @Path("create-new-procedure")
@@ -155,6 +162,52 @@ public class ProcedureController {
     @APIResponse(description = "Successful", responseCode = "200", content = @Content(schema = @Schema(implementation = ProcedureDTO.class)))
     public Response updateService(@PathParam("id") Long id, ProcedureUpdateRequest request){
         return Response.ok(new ResponseMessage(ActionMessages.UPDATED.label,procedureService.updateProcedureById(id, request) )).build();
+    }
+
+    @GET
+    @Path("procedures/{procedureId}/unit-selling-models")
+    @Transactional
+    @Operation(summary = "List unit selling models for a service")
+    @APIResponse(description = "Successful", responseCode = "200", content = @Content(schema = @Schema(implementation = ProcedureUnitSellingModelDTO.class, type = SchemaType.ARRAY)))
+    public Response getProcedureUnitSellingModels(
+            @PathParam("procedureId") Long procedureId,
+            @jakarta.ws.rs.QueryParam("unitCostPrice") BigDecimal unitCostPrice
+    ) {
+        var models = procedureUnitSellingModelService.listByProcedure(procedureId, unitCostPrice);
+        return Response.ok(new ResponseMessage(ActionMessages.FETCHED.label, models)).build();
+    }
+
+    @POST
+    @Path("procedures/{procedureId}/unit-selling-models")
+    @Transactional
+    @Operation(summary = "Create unit selling model for a service")
+    @APIResponse(description = "Successful", responseCode = "200", content = @Content(schema = @Schema(implementation = ProcedureUnitSellingModelDTO.class)))
+    public Response createProcedureUnitSellingModel(
+            @PathParam("procedureId") Long procedureId,
+            UnitSellingModelRequest request
+    ) {
+        return procedureUnitSellingModelService.createModel(procedureId, request);
+    }
+
+    @PUT
+    @Path("procedures/unit-selling-models/{modelId}")
+    @Transactional
+    @Operation(summary = "Update unit selling model for a service")
+    @APIResponse(description = "Successful", responseCode = "200", content = @Content(schema = @Schema(implementation = ProcedureUnitSellingModelDTO.class)))
+    public Response updateProcedureUnitSellingModel(
+            @PathParam("modelId") Long modelId,
+            UnitSellingModelRequest request
+    ) {
+        return procedureUnitSellingModelService.updateModel(modelId, request);
+    }
+
+    @DELETE
+    @Path("procedures/unit-selling-models/{modelId}")
+    @Transactional
+    @Operation(summary = "Delete unit selling model for a service")
+    @APIResponse(description = "Successful", responseCode = "200")
+    public Response deleteProcedureUnitSellingModel(@PathParam("modelId") Long modelId) {
+        return procedureUnitSellingModelService.deleteModel(modelId);
     }
 
 

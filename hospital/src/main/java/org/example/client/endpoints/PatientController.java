@@ -30,10 +30,10 @@ import org.example.configuration.handler.ResponseMessage;
 import java.util.List;
 
 
-@Path("Patient-management")
+@Path("Client-management")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-@Tag(name = "Patient Management Module - Manage Patient Date", description = "Patient Management")
+@Tag(name = "Client Management Module - Manage Patient Date", description = "Client Management")
 
 public class PatientController {
 

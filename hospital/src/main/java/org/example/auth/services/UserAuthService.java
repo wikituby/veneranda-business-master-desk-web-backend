@@ -40,10 +40,20 @@ public class UserAuthService {
     public UserAuthResponse login(UserAuthRequest request) {
         return Optional.ofNullable(userRepository.login(request.email, request.password))
                 .map(user -> {
+                    if (isInactiveAccount(user.status)) {
+                        throw new WebApplicationException(
+                                "Your account is inactive. Please contact an administrator.",
+                                403
+                        );
+                    }
                     String jwtToken = jwtUtils.generateJwtToken(user);
-                    return new UserAuthResponse(user, jwtToken, UserTypes.AGENT.label); // Pass user.email and user.username
+                    return new UserAuthResponse(user, jwtToken, UserTypes.AGENT.label);
                 })
                 .orElseThrow(() -> new WebApplicationException("user Not Found", 404));
+    }
+
+    private boolean isInactiveAccount(String status) {
+        return status != null && "inactive".equalsIgnoreCase(status.trim());
     }
 
     @Transactional

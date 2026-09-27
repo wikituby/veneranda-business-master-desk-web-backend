@@ -24,7 +24,7 @@ public class FileResource extends PanacheEntity {
 
     @Lob
     @JsonbTransient
-    @Column(nullable = false, columnDefinition = "BYTEA")
+    @Column(nullable = false)
     public byte[] data;
 
     @Column

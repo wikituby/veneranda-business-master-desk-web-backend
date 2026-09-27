@@ -27,10 +27,10 @@ import org.example.procedure.procedureRequested.services.payloads.requests.Proce
 import java.math.BigDecimal;
 import java.util.List;
 
-@Path("Patient-management")
+@Path("Client-management")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-@Tag(name = "Patient Management Module - ServicesRequested", description = "Patient Management")
+@Tag(name = "Client Management Module - ServicesRequested", description = "Client Management")
 
 
 public class ProcedureRequestedController {
@@ -101,6 +101,15 @@ public class ProcedureRequestedController {
 
         // Return a successful response with the list of DTOs
         return Response.ok(new ResponseMessage(ActionMessages.FETCHED.label, dentalProcedureRequested)).build();
+    }
+
+    @GET
+    @Path("get-all-maternity-procedures")
+    @Operation(summary = "get-all-maternity-procedures", description = "MCH / maternity service procedure requests")
+    @APIResponse(description = "Successful", responseCode = "200", content = @Content(schema = @Schema(implementation = ProcedureRequestedDTO.class)))
+    public Response getAllMaternityProcedures() {
+        List<ProcedureRequestedDTO> maternityProcedureRequested = procedureRequestedService.getAllMaternityProcedures();
+        return Response.ok(new ResponseMessage(ActionMessages.FETCHED.label, maternityProcedureRequested)).build();
     }
 
     @PUT

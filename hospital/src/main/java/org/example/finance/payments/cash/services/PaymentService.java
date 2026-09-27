@@ -1,7 +1,7 @@
 package org.example.finance.payments.cash.services;
 
 import io.smallrye.mutiny.Multi;
-import io.vertx.mutiny.mysqlclient.MySQLPool;
+import io.vertx.mutiny.sqlclient.Pool;
 import io.vertx.mutiny.sqlclient.Row;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -13,13 +13,15 @@ import org.example.finance.invoice.domains.repositories.InvoiceRepository;
 import org.example.finance.payments.cash.domains.Payments;
 import org.example.finance.payments.cash.domains.repository.PaymentsRepository;
 import org.example.finance.payments.cash.services.payloads.responses.FullPaymentResponse;
+import org.example.finance.payments.cash.services.payloads.responses.PayAllPatientDebtResponse;
 import org.example.finance.payments.cash.services.payloads.responses.PaymentDTO;
 import org.example.finance.payments.cash.services.payloads.requests.PaymentParametersRequest;
 import org.example.finance.payments.cash.services.payloads.requests.PaymentRequest;
-import org.example.visit.domains.repositories.PatientVisitRepository;
+import org.example.client.domains.Patient;
 import org.example.finance.invoice.domains.Invoice;
 import org.example.finance.invoice.services.InvoiceService;
 import org.example.visit.domains.PatientVisit;
+import org.example.visit.domains.repositories.PatientVisitRepository;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -40,7 +42,7 @@ public class PaymentService {
     InvoiceService invoiceService;
 
     @Inject
-    MySQLPool client;
+    Pool client;
 
     @Inject
     PatientVisitRepository patientVisitRepository;
@@ -86,8 +88,16 @@ public class PaymentService {
             //throw new IllegalArgumentException("No invoice found for visit ID: " + request.visitId);
         }
 
-        // Get the first invoice from the list (or handle multiple invoices as needed)
-        Invoice invoice = visit.invoice.get(0); // Assuming visit.invoice is a List<Invoice>
+        // Refresh totals from line items (visit invoice may still show 0 balance until synced)
+        invoiceService.syncInvoiceTotalsForVisit(visitId);
+        visit = patientVisitRepository.findById(visitId);
+        if (visit.invoice == null || visit.invoice.isEmpty()) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(new ResponseMessage("Invoice not found for visit ID:"  + visitId, null))
+                    .build();
+        }
+
+        Invoice invoice = visit.invoice.get(0);
         if (invoice == null) {
             return Response.status(Response.Status.BAD_REQUEST)
                     .entity(new ResponseMessage("Invoice not found for visit ID:"  + visitId, null))
@@ -95,8 +105,15 @@ public class PaymentService {
         }
 
         if (invoice.balanceDue.compareTo(BigDecimal.ZERO) == 0) {
+            if (invoice.subTotal != null && invoice.subTotal.compareTo(BigDecimal.ZERO) > 0) {
+                return Response.status(Response.Status.BAD_REQUEST)
+                        .entity(new ResponseMessage("This invoice is fully paid", null))
+                        .build();
+            }
             return Response.status(Response.Status.BAD_REQUEST)
-                    .entity(new ResponseMessage("This invoice is fully paid", null))
+                    .entity(new ResponseMessage(
+                            "Nothing to pay on this visit. Add services or treatments before recording payment.",
+                            null))
                     .build();
         }
 
@@ -112,8 +129,12 @@ public class PaymentService {
         payment.invoice = invoice;
         payment.amountToPay = request.amountToPay;
         payment.paymentForm = request.paymentForm;
-        payment.dateOfPayment = java.time.LocalDate.now();
-        payment.timeOfPayment = java.time.LocalTime.now();
+        payment.dateOfPayment = request.dateOfPayment != null
+                ? request.dateOfPayment
+                : java.time.LocalDate.now();
+        payment.timeOfPayment = request.timeOfPayment != null
+                ? request.timeOfPayment
+                : java.time.LocalTime.now().withNano(0);
         payment.status = request.status;
         payment.notes = request.notes;
 
@@ -134,10 +155,183 @@ public class PaymentService {
 
     }
 
+    /**
+     * Apply a lump-sum payment across the patient's visits, oldest visit first,
+     * until the amount is exhausted. Each slice is recorded as its own payment on that visit.
+     */
+    @Transactional
+    public Response payAllPatientDebt(Long patientId, PaymentRequest request) {
+        if (patientId == null || patientId <= 0) {
+            return badRequest("A valid patient id is required.");
+        }
+        if (request == null || request.amountToPay == null || request.amountToPay.compareTo(BigDecimal.ZERO) <= 0) {
+            return badRequest("Amount to pay must be greater than zero.");
+        }
 
+        Patient patient = Patient.findById(patientId);
+        if (patient == null) {
+            return badRequest("Patient not found for ID: " + patientId);
+        }
 
+        String paymentForm = request.paymentForm != null && !request.paymentForm.isBlank()
+                ? request.paymentForm
+                : "Cash At Hand";
+        String status = request.status != null && !request.status.isBlank()
+                ? request.status
+                : "Approved";
+        String baseNotes = request.notes != null && !request.notes.isBlank()
+                ? request.notes.trim()
+                : "Pay all patient debt";
 
+        List<PatientVisit> visits = PatientVisit.find(
+                "patient.id = ?1 ORDER BY visitNumber ASC, id ASC",
+                patientId
+        ).list();
 
+        BigDecimal remaining = request.amountToPay;
+        PayAllPatientDebtResponse result = new PayAllPatientDebtResponse();
+        result.totalApplied = BigDecimal.ZERO;
+        result.remainingUnapplied = remaining;
+
+        for (PatientVisit visit : visits) {
+            if (remaining.compareTo(BigDecimal.ZERO) <= 0) {
+                break;
+            }
+
+            invoiceService.syncInvoiceTotalsForVisit(visit.id);
+            PatientVisit freshVisit = patientVisitRepository.findById(visit.id);
+            if (freshVisit == null || freshVisit.invoice == null || freshVisit.invoice.isEmpty()) {
+                continue;
+            }
+
+            Invoice invoice = freshVisit.invoice.get(0);
+            if (invoice == null || invoice.balanceDue == null || invoice.balanceDue.compareTo(BigDecimal.ZERO) <= 0) {
+                continue;
+            }
+
+            BigDecimal slice = remaining.min(invoice.balanceDue);
+            PaymentRequest sliceRequest = new PaymentRequest();
+            sliceRequest.amountToPay = slice;
+            sliceRequest.paymentForm = paymentForm;
+            sliceRequest.status = status;
+            sliceRequest.receivedBy = request.receivedBy;
+            String visitLabel = freshVisit.visitNumber > 0
+                    ? "Visit " + freshVisit.visitNumber
+                    : "Visit #" + freshVisit.id;
+            sliceRequest.notes = baseNotes + " (" + visitLabel + ")";
+
+            Response paymentResponse = createNewPayment(freshVisit.id, sliceRequest);
+            if (paymentResponse.getStatus() != Response.Status.OK.getStatusCode()) {
+                return paymentResponse;
+            }
+
+            ResponseMessage body = (ResponseMessage) paymentResponse.getEntity();
+            PaymentDTO paymentDto = body != null && body.data instanceof PaymentDTO
+                    ? (PaymentDTO) body.data
+                    : null;
+
+            result.allocations.add(new PayAllPatientDebtResponse.PayAllPatientDebtAllocation(
+                    freshVisit.id,
+                    freshVisit.visitNumber,
+                    slice,
+                    paymentDto
+            ));
+            result.totalApplied = result.totalApplied.add(slice);
+            remaining = remaining.subtract(slice);
+        }
+
+        if (result.allocations.isEmpty()) {
+            // No visit invoices — allow paying pharmacy/OTC account debt on the patient.
+            BigDecimal patientDue = patient.totalAmountDue != null
+                    ? patient.totalAmountDue
+                    : BigDecimal.ZERO;
+            if (patientDue.compareTo(BigDecimal.ZERO) <= 0) {
+                return badRequest("No outstanding visit balances found for this patient.");
+            }
+            BigDecimal slice = remaining.min(patientDue);
+            patient.totalAmountDue = patientDue.subtract(slice);
+            if (patient.totalAmountDue.compareTo(BigDecimal.ZERO) < 0) {
+                patient.totalAmountDue = BigDecimal.ZERO;
+            }
+            patient.persist();
+            result.totalApplied = slice;
+            result.remainingUnapplied = remaining.subtract(slice).max(BigDecimal.ZERO);
+            return Response.ok(new ResponseMessage(
+                    "Patient account debt of " + slice + " paid.",
+                    result
+            )).build();
+        }
+
+        // Keep patient.totalAmountDue in sync for mixed visit + OTC debt.
+        BigDecimal patientDue = patient.totalAmountDue != null
+                ? patient.totalAmountDue
+                : BigDecimal.ZERO;
+        if (patientDue.compareTo(BigDecimal.ZERO) > 0 && result.totalApplied.compareTo(BigDecimal.ZERO) > 0) {
+            BigDecimal nextDue = patientDue.subtract(result.totalApplied.min(patientDue));
+            if (nextDue.compareTo(BigDecimal.ZERO) < 0) {
+                nextDue = BigDecimal.ZERO;
+            }
+            // If payment still remains and patient still has OTC-only debt, apply the rest.
+            if (remaining.compareTo(BigDecimal.ZERO) > 0 && nextDue.compareTo(BigDecimal.ZERO) > 0) {
+                BigDecimal otcSlice = remaining.min(nextDue);
+                nextDue = nextDue.subtract(otcSlice);
+                result.totalApplied = result.totalApplied.add(otcSlice);
+                remaining = remaining.subtract(otcSlice);
+            }
+            patient.totalAmountDue = nextDue;
+            patient.persist();
+        }
+
+        result.remainingUnapplied = remaining.max(BigDecimal.ZERO);
+        return Response.ok(new ResponseMessage(
+                "Patient debt payment applied across " + result.allocations.size() + " visit(s).",
+                result
+        )).build();
+    }
+
+    private Response badRequest(String message) {
+        return Response.status(Response.Status.BAD_REQUEST)
+                .entity(new ResponseMessage(message, null))
+                .build();
+    }
+
+    /**
+     * After pharmacy dispenses visit prescriptions at the counter, apply payment to the visit invoice
+     * (up to the sale total and current balance due). No-op when the invoice is already settled.
+     */
+    @Transactional
+    public boolean tryRecordPharmacyDispensePayment(Long visitId, BigDecimal pharmacySaleTotal, PaymentRequest template) {
+        if (visitId == null || pharmacySaleTotal == null || pharmacySaleTotal.compareTo(BigDecimal.ZERO) <= 0) {
+            return false;
+        }
+        // "Dispensed, no money received" must never create a visit payment row.
+        if (org.example.finance.billing.services.PatientBillingService.isNoPaymentTemplate(template)) {
+            return false;
+        }
+        invoiceService.syncInvoiceTotalsForVisit(visitId);
+        PatientVisit visit = patientVisitRepository.findById(visitId);
+        if (visit == null || visit.invoice == null || visit.invoice.isEmpty()) {
+            return false;
+        }
+        Invoice invoice = visit.invoice.get(0);
+        if (invoice == null || invoice.balanceDue == null || invoice.balanceDue.compareTo(BigDecimal.ZERO) <= 0) {
+            return false;
+        }
+        PaymentRequest payment = new PaymentRequest();
+        payment.amountToPay = pharmacySaleTotal.min(invoice.balanceDue);
+        payment.paymentForm = template != null && template.paymentForm != null && !template.paymentForm.isBlank()
+                ? template.paymentForm
+                : "Cash At Hand";
+        payment.status = template != null && template.status != null && !template.status.isBlank()
+                ? template.status
+                : "Approved";
+        payment.notes = template != null && template.notes != null && !template.notes.isBlank()
+                ? template.notes
+                : "Pharmacy prescription payment";
+        payment.receivedBy = template != null ? template.receivedBy : null;
+        Response response = createNewPayment(visitId, payment);
+        return response.getStatus() == Response.Status.OK.getStatusCode();
+    }
 
     @Transactional
     public BigDecimal getTotalPaymentOfInvoice(Long invoiceId) {
@@ -154,6 +348,7 @@ public class PaymentService {
 
         // Calculate the total amount paid or return BigDecimal.ZERO if no payments exist
         return paymentsMade.stream()
+                .filter(payment -> !isReversedPayment(payment))
                 .map(payment -> payment.amountToPay != null ? payment.amountToPay : BigDecimal.ZERO)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
@@ -174,8 +369,15 @@ public class PaymentService {
 
         // Calculate the total amount paid or return BigDecimal.ZERO if no payments exist
         return paymentsMade.stream()
+                .filter(payment -> !isReversedPayment(payment))
                 .map(payment -> payment.amountToPay != null ? payment.amountToPay : BigDecimal.ZERO)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    private boolean isReversedPayment(Payments payment) {
+        return payment != null
+                && payment.status != null
+                && "reversed".equalsIgnoreCase(payment.status.trim());
     }
 
 
@@ -193,20 +395,102 @@ public class PaymentService {
     }
 
     @Transactional
+    public Response updatePayment(Long id, PaymentRequest request) {
+        if (id == null) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(new ResponseMessage("Payment ID cannot be null.", null))
+                    .build();
+        }
+        if (request == null) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(new ResponseMessage("Payment request cannot be null.", null))
+                    .build();
+        }
+
+        Payments payment = Payments.findById(id);
+        if (payment == null) {
+            return Response.status(Response.Status.NOT_FOUND)
+                    .entity(new ResponseMessage("Payment not found", null))
+                    .build();
+        }
+        if (payment.visit != null && "closed".equalsIgnoreCase(String.valueOf(payment.visit.visitStatus))) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(new ResponseMessage("Visit is closed. You cannot update this payment.", null))
+                    .build();
+        }
+        if (isReversedPayment(payment)) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(new ResponseMessage("Reversed payments cannot be edited.", null))
+                    .build();
+        }
+
+        boolean reversing = request.status != null && "reversed".equalsIgnoreCase(request.status.trim());
+        if (reversing) {
+            payment.status = "Reversed";
+        } else {
+            if (request.amountToPay != null) {
+                if (request.amountToPay.compareTo(BigDecimal.ZERO) <= 0) {
+                    return Response.status(Response.Status.BAD_REQUEST)
+                            .entity(new ResponseMessage("Amount to pay must be greater than zero.", null))
+                            .build();
+                }
+                payment.amountToPay = request.amountToPay;
+            }
+            if (request.paymentForm != null && !request.paymentForm.isBlank()) {
+                payment.paymentForm = request.paymentForm.trim();
+            }
+            if (request.notes != null) {
+                payment.notes = request.notes;
+            }
+            if (request.status != null && !request.status.isBlank()) {
+                payment.status = request.status.trim();
+            }
+            if (request.receivedBy != null && !request.receivedBy.isBlank()) {
+                payment.receivedBy = request.receivedBy.trim();
+            }
+            if (request.dateOfPayment != null) {
+                payment.dateOfPayment = request.dateOfPayment;
+            }
+            if (request.timeOfPayment != null) {
+                payment.timeOfPayment = request.timeOfPayment;
+            }
+        }
+
+        paymentsRepository.persist(payment);
+        if (payment.invoice != null) {
+            invoiceService.updateInvoiceAmountPaid(payment.invoice);
+        }
+
+        String message = reversing ? "Payment reversed successfully" : "Payment updated successfully";
+        return Response.ok(new ResponseMessage(message, new PaymentDTO(payment))).build();
+    }
+
+    @Transactional
     public Response deletePayment(Long id) {
         try {
             Payments payment = Payments.findById(id);
+            if (payment == null) {
+                return Response.status(Response.Status.NOT_FOUND)
+                        .entity(new ResponseMessage("Payment not found", null))
+                        .build();
+            }
 
-            if ("closed".equals(payment.visit.visitStatus)) {
+            if (payment.visit != null && "closed".equals(payment.visit.visitStatus)) {
                 return Response.status(Response.Status.BAD_REQUEST)
                         .entity(new ResponseMessage("Visit is closed. You cannot add anything. Open a new visit or contact Admin on 0784411848: ", null))
                         .build();
             }
+
+            Invoice invoice = payment.invoice;
+
             // Execute the custom SQL query to delete the payment
             int rowsDeleted = paymentsRepository.deletePaymentById(id);
 
             // Check if any rows were deleted
             if (rowsDeleted > 0) {
+                if (invoice != null) {
+                    invoiceService.updateInvoiceAmountPaid(invoice);
+                }
                 return Response.ok(new ResponseMessage(ActionMessages.DELETED.label)).build();
             } else {
                 return Response.status(Response.Status.NOT_FOUND)
@@ -241,7 +525,7 @@ public class PaymentService {
             dateOfPayment,
             paidBy,
             timeOfPayment
-        FROM vena.Payments
+        FROM Payments
         %s
         ORDER BY dateOfPayment DESC;
         """.formatted(whereClause);

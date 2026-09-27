@@ -1,7 +1,7 @@
 package org.example.cafeteria.finance.payments.cash.services;
 
 import io.smallrye.mutiny.Multi;
-import io.vertx.mutiny.mysqlclient.MySQLPool;
+import io.vertx.mutiny.sqlclient.Pool;
 import io.vertx.mutiny.sqlclient.Row;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -40,7 +40,7 @@ public class CanteenPaymentService {
     CanteenInvoiceService canteenInvoiceService;
 
     @Inject
-    MySQLPool client;
+    Pool client;
 
     @Inject
     SaleDayRepository patientVisitRepository;
@@ -239,7 +239,7 @@ public class CanteenPaymentService {
             dateOfPayment,
             paidBy,
             timeOfPayment
-        FROM vena.CanteenPayments
+        FROM CanteenPayments
         %s
         ORDER BY dateOfPayment DESC;
         """.formatted(whereClause);

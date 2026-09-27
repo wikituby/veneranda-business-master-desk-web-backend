@@ -17,6 +17,9 @@ public class UserRequest {
     @Schema(example = "admin")
     public String role;
 
+    @Schema(example = "lab,sono", description = "Comma-separated secondary roles (optional)")
+    public String secondaryRoles;
+
     @Schema(example = "MBChB")
     public String qualification;
 

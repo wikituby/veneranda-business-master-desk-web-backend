@@ -14,6 +14,7 @@ import org.example.user.domains.User;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.HashSet;
 import java.util.Set;
 
 @ApplicationScoped
@@ -40,9 +41,14 @@ public class JwtUtils {
             throw new IllegalArgumentException("Invalid user data for JWT generation");
         }
 
+        Set<String> roleGroups = new HashSet<>(user.allRoleNames());
+        if (roleGroups.isEmpty()) {
+            roleGroups.add(user.role);
+        }
+
         return Jwt.subject(user.email)
                 .issuedAt(Instant.now())
-                .groups(Set.of(user.role))
+                .groups(roleGroups)
                 .expiresIn(DEFAULT_TOKEN_EXPIRATION)
                 .upn(user.username)
                 .issuer("hospital-server")
@@ -91,6 +97,28 @@ public class JwtUtils {
             throw new WebApplicationException("Invalid JWT token", 401);
         } catch (Exception e) {
             LOG.error("JWT validation failed", e);
+            throw new WebApplicationException("Authentication failed", 401);
+        }
+    }
+
+    /** Preferred login key: {@code upn} (username), falling back to JWT subject (email). */
+    public String getLoginFromJwtToken(String token) {
+        try {
+            JsonWebToken parsed = parser.verify(token, jwtSecret);
+            String upn = parsed.getClaim("upn");
+            if (upn != null && !upn.isBlank()) {
+                return upn.trim();
+            }
+            String subject = parsed.getSubject();
+            if (subject != null && !subject.isBlank()) {
+                return subject.trim();
+            }
+            throw new WebApplicationException("Invalid JWT claims", 401);
+        } catch (ParseException e) {
+            LOG.error("JWT parsing failed", e);
+            throw new WebApplicationException("Invalid JWT token", 401);
+        } catch (Exception e) {
+            LOG.error("JWT login resolution failed", e);
             throw new WebApplicationException("Authentication failed", 401);
         }
     }

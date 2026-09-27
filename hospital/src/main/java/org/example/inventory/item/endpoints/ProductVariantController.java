@@ -28,7 +28,7 @@ import org.example.inventory.item.services.payloads.responses.basicResponses.Com
 import org.example.inventory.item.services.payloads.responses.basicResponses.ProductVariantResponse;
 import org.example.inventory.item.services.payloads.responses.dtos.ProductVariantDTO;
 
-@Path("/Hospital-item")
+@Path("/Business-item")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 @Tag(name = "Hospital Management Module", description = "Hospital Management")

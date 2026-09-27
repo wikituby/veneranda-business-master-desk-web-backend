@@ -75,6 +75,17 @@ public class PatientVisit extends PanacheEntity {
     @Column
     public String visitStatus;
 
+    /**
+     * When true, seller confirmed goods/services were handed over for this order.
+     * Independent of payment — delivery does not imply payment received.
+     */
+    @Column
+    public Boolean goodsDelivered;
+
+    /** Free-text note captured when goods delivery is confirmed. */
+    @Column(length = 1000)
+    public String deliveryNote;
+
     @Column
     public String visitName;
 
@@ -89,6 +100,36 @@ public class PatientVisit extends PanacheEntity {
 
     @Column
     public BigDecimal subTotal;
+
+    /** Total amount the patient pays (after discount and tax). Mirrors {@link #totalAmount}. */
+    @Column
+    public BigDecimal totalSell;
+
+    @Column
+    public BigDecimal tax;
+
+    @Column
+    public BigDecimal discount;
+
+    /** Internal TT cost (buy/cost of drugs, procedures, sundries) persisted with the visit. */
+    @Column
+    public BigDecimal totalCost;
+
+    /** Selling total for treatments and sundries on this visit. */
+    @Column
+    public BigDecimal treatmentTotalSell;
+
+    /** Selling total for all procedures on this visit. */
+    @Column
+    public BigDecimal totalSellForProcedure;
+
+    /** Internal cost total for procedures on this visit. */
+    @Column
+    public BigDecimal totalCostOfProcedures;
+
+    /** Internal cost total for treatments and sundries on this visit. */
+    @Column
+    public BigDecimal totalCostOfTreatment;
 
 
     @Column
@@ -225,6 +266,10 @@ public class PatientVisit extends PanacheEntity {
 
     public BigDecimal getTotalAmount() {
         return totalAmount;
+    }
+
+    public BigDecimal getTotalCost() {
+        return totalCost;
     }
 }
 

@@ -12,11 +12,12 @@ public class TreatmentChartDTO {
     public String treatmentName;
     public LocalDate dateGiven;
     public LocalTime timeGiven;
-    public LocalTime timeBetweenGivenToNextDosage;
+    public String timeBetweenGivenToNextDosage;
     public LocalDate dateForNextDosage;
     public LocalTime timeForNextDosage;
     public String givenBy;
     public String route;
+    public String instructions;
     public BigDecimal dosageValue;
     public String dosageUnit;
     public BigDecimal frequencyValue;
@@ -27,6 +28,7 @@ public class TreatmentChartDTO {
     public Integer unitsUsed;
     public Integer totalDosagesRemaining;
     public String status;
+    public String administrationPlace;
 
     public TreatmentChartDTO(TreatmentChart chart) {
         if (chart != null) {
@@ -40,6 +42,7 @@ public class TreatmentChartDTO {
             this.timeForNextDosage = chart.timeForNextDosage;
             this.givenBy = chart.givenBy;
             this.route = chart.route;
+            this.instructions = chart.instructions;
             this.dosageValue = chart.dosageValue;
             this.dosageUnit = chart.dosageUnit;
             this.frequencyValue = chart.frequencyValue;
@@ -50,6 +53,7 @@ public class TreatmentChartDTO {
             this.unitsUsed = chart.unitsUsed;
             this.totalDosagesRemaining = chart.totalDosagesRemaining;
             this.status = chart.status;
+            this.administrationPlace = chart.administrationPlace;
         }
     }
 

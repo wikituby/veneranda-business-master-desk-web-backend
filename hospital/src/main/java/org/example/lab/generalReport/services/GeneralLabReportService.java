@@ -73,9 +73,11 @@ public class GeneralLabReportService {
         if (request.recommendation != null) {
             report.recommendation = request.recommendation;
         }
+        if (request.labReportTitle != null) {
+            report.labReportTitle = request.labReportTitle;
+        }
         if (request.result != null) {
             report.result = request.result;
-            report.labReportTitle = request.result;
         }
         if (request.notes != null) {
             report.notes = request.notes;
@@ -86,14 +88,17 @@ public class GeneralLabReportService {
         generalLabReportRepository.persist(report);
         generalLabReportRepository.flush();
 
+        String plainResult = htmlToPlainText(report.result);
         if (request.result != null) {
-            procedureRequested.report = report.result;
+            procedureRequested.report = plainResult;
+        } else if (request.labReportTitle != null && !request.labReportTitle.isBlank()) {
+            procedureRequested.report = request.labReportTitle.trim();
         }
         if (request.doneBy != null) {
             procedureRequested.doneBy = report.doneBy;
         }
 
-        if (report.result == null || report.result.isEmpty()) {
+        if (plainResult.isEmpty()) {
             procedureRequested.status = "Pending";
             procedureRequested.bgColor = "rgb(6, 113, 212)";
         } else {
@@ -123,6 +128,25 @@ public class GeneralLabReportService {
             report = GeneralLabReport.find("procedureRequested.id", procedureRequestedId).firstResult();
         }
         return Response.ok(new ResponseMessage("lab report fetched successfully", new GeneralLabReportDTO(report))).build();
+    }
+
+    /** Plain-text summary for procedure request list cards (Quill stores HTML in result). */
+    private static String htmlToPlainText(String html) {
+        if (html == null || html.isBlank()) {
+            return "";
+        }
+        String text = html
+                .replaceAll("(?i)<\\s*br\\s*/?>", "\n")
+                .replaceAll("(?i)</\\s*p\\s*>", "\n")
+                .replaceAll("(?i)</\\s*div\\s*>", "\n")
+                .replaceAll("(?i)</\\s*li\\s*>", "\n")
+                .replaceAll("<[^>]+>", " ")
+                .replace('\u00a0', ' ')
+                .replaceAll("[ \\t]+\\n", "\n")
+                .replaceAll("\\n{3,}", "\n\n")
+                .replaceAll("\\s+", " ")
+                .trim();
+        return text;
     }
 }
 

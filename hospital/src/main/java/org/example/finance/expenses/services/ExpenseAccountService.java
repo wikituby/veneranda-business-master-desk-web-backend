@@ -42,6 +42,8 @@ public class ExpenseAccountService {
         expenseAccount.accountName = request.accountName;
         expenseAccount.description = request.description;
         expenseAccount.expenseCategoryName = expenseCategory.categoryName;
+        expenseAccount.accountLimit = request.accountLimit;
+        expenseAccount.limitPeriod = request.limitPeriod;
         expenseAccount.dateOfAccountCreation = LocalDate.now();
         expenseAccount.dateOfAccountUpdate = LocalDate.now();
         expenseAccount.timeOfAccountCreation = java.time.LocalTime.now();
@@ -61,8 +63,47 @@ public class ExpenseAccountService {
                 .toList();
     }
 
+    @Transactional
+    public Response updateExpenseAccount(Long id, ExpenseAccountRequest request) {
+        ExpenseAccount account = expenseAccountRepository.findById(id);
+        if (account == null) {
+            return Response.status(Response.Status.NOT_FOUND)
+                    .entity(new ResponseMessage("Expense account not found", id))
+                    .build();
+        }
 
+        if (request.categoryId != null) {
+            ExpenseCategory category = expenseCategoryRepository.findById(request.categoryId);
+            if (category == null) {
+                return Response.status(Response.Status.NOT_FOUND)
+                        .entity(new ResponseMessage("Category not found", request.categoryId))
+                        .build();
+            }
+            account.category = category;
+            account.expenseCategoryName = category.categoryName;
+        }
 
+        if (request.accountName != null) account.accountName = request.accountName;
+        if (request.description != null) account.description = request.description;
+        account.accountLimit = request.accountLimit;
+        account.limitPeriod = request.limitPeriod;
+        account.dateOfAccountUpdate = LocalDate.now();
+
+        expenseAccountRepository.persist(account);
+        return Response.ok(new ResponseMessage("Expense account updated successfully", new ExpenseAccountDto(account))).build();
+    }
+
+    @Transactional
+    public Response deleteExpenseAccount(Long id) {
+        ExpenseAccount account = expenseAccountRepository.findById(id);
+        if (account == null) {
+            return Response.status(Response.Status.NOT_FOUND)
+                    .entity(new ResponseMessage("Expense account not found", id))
+                    .build();
+        }
+        expenseAccountRepository.delete(account);
+        return Response.ok(new ResponseMessage("Expense account deleted successfully", id)).build();
+    }
 }
 
 

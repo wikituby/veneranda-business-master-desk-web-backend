@@ -14,6 +14,7 @@ public class ProcedureDTO {
     public String description;
     public BigDecimal unitCostPrice;
     public BigDecimal unitSellingPrice;
+    public Long unitSellingModelId;
     public String procedureName;
 
     public ProcedureDTO(Procedure procedure) {
@@ -33,6 +34,7 @@ public class ProcedureDTO {
             this.description = procedure.description;
             this.unitCostPrice = procedure.unitCostPrice;
             this.unitSellingPrice = procedure.unitSellingPrice;
+            this.unitSellingModelId = procedure.unitSellingModelId;
             this.procedureName = procedure.procedureName;
         }
     }

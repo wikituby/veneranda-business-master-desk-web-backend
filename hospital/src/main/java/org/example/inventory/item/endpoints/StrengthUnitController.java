@@ -25,7 +25,7 @@ import org.example.inventory.item.services.payloads.requests.StrengthUnitRequest
 import org.example.inventory.item.services.payloads.responses.basicResponses.StrengthUnitResponse;
 import org.example.inventory.item.services.payloads.responses.dtos.StrengthUnitDTO;
 
-@Path("/Hospital-item")
+@Path("/Business-item")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 @Tag(name = "Hospital Management Module", description = "Hospital Management")

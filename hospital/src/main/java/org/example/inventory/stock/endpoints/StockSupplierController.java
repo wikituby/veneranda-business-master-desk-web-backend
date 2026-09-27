@@ -16,7 +16,7 @@ import org.example.inventory.stock.services.StockSupplierService;
 import org.example.inventory.stock.services.payloads.requests.StockSupplierRequest;
 import org.example.inventory.stock.services.payloads.responses.dtos.StockSupplierDTO;
 
-@Path("/Hospital-item")
+@Path("/Business-item")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 @Tag(name = "Hospital Management Module", description = "Manage hospital stock suppliers")

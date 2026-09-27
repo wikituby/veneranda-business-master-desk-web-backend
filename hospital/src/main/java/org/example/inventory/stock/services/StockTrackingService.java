@@ -25,12 +25,20 @@ public class StockTrackingService {
     public static final String SRC_TREATMENT_CHART_ADJUST = "TREATMENT_CHART_ADJUST";
     public static final String SRC_EXPIRY_ITEM_REGISTER = "EXPIRY_ITEM_REGISTER";
     public static final String SRC_STOCK_ADJUSTMENT = "STOCK_ADJUSTMENT";
+    public static final String SRC_STOCK_INITIALIZER = "STOCK_INITIALIZER";
+    public static final String SRC_OTC_PHARMACY_SALE = "OTC_PHARMACY_SALE";
+    public static final String SRC_OTC_PHARMACY_SALE_VOID = "OTC_PHARMACY_SALE_VOID";
+    public static final String SRC_VISIT_SUNDRY_DISPENSE = "VISIT_SUNDRY_DISPENSE";
+    public static final String SRC_VISIT_SUNDRY_DELETE = "VISIT_SUNDRY_DELETE";
 
     public static final String REF_STOCK_RECEIVE = "StockReceive";
     public static final String REF_STOCK_TRANSFER = "StockTransfer";
     public static final String REF_TREATMENT_CHART = "TreatmentChart";
     public static final String REF_EXPIRY_ITEM_REGISTER = "ExpiryItemRegister";
     public static final String REF_STOCK_ADJUSTMENT = "StockAdjustment";
+    public static final String REF_STOCK_INITIALIZER = "StockInitialization";
+    public static final String REF_OTC_PHARMACY_SALE = "OtcPharmacySale";
+    public static final String REF_VISIT_SUNDRY = "VisitSundry";
 
     /**
      * Persist one audit row for a batch-level quantity change.

@@ -67,15 +67,7 @@ public class InitialTriageVitalsService {
         initialTriageVitals.takenBy = request.takenBy;
         initialTriageVitals.respiratoryRate = request.respiratoryRate;
 
-
-
-        // Ensure systolic and diastolic values are not null before calculating MAP
-        if (request.systolic == null || request.diastolic == null) {
-            initialTriageVitals.map = null;
-            initialTriageVitals.bloodPressure = "N/A";
-        }
-
-        initialTriageVitals.bloodPressure = request.systolic +"/"+ request.diastolic;
+        applyBloodPressureFields(initialTriageVitals, request.systolic, request.diastolic);
 
         initialTriageVitals.visit = patientVisit;
 
@@ -122,18 +114,13 @@ public class InitialTriageVitalsService {
     }
 
     public Response updateInitialVitalById(Long id, InitialVitalUpdateRequest request) {
-
-        InitialTriageVitals initialTriageVitals1 = initialTriageVitalsRepository.findById(id);
-
-        if ("closed".equals(initialTriageVitals1.visit.visitStatus)) {
-            return Response.status(Response.Status.BAD_REQUEST)
-                    .entity(new ResponseMessage("Visit is closed. You cannot add anything. Open a new visit or contact Admin on 0784411848: ", null))
-                    .build();
-        }
-
-
         return initialTriageVitalsRepository.findByIdOptional(id)
                 .map(initialTriageVitals -> {
+                    if ("closed".equals(initialTriageVitals.visit.visitStatus)) {
+                        return Response.status(Response.Status.BAD_REQUEST)
+                                .entity(new ResponseMessage("Visit is closed. You cannot add anything. Open a new visit or contact Admin on 0784411848: ", null))
+                                .build();
+                    }
 
                     initialTriageVitals.dateTaken = (request.dateTaken != null) ? request.dateTaken : LocalDate.now();
                     initialTriageVitals.timeTaken = (request.timeTaken != null) ? request.timeTaken : LocalTime.now();
@@ -149,21 +136,43 @@ public class InitialTriageVitalsService {
                     initialTriageVitals.diastolic = request.diastolic;
                     initialTriageVitals.pulseRate = request.pulseRate;
                     initialTriageVitals.takenBy = request.takenBy;
-
-                    // Calculate Mean Arterial Pressure (MAP)
-                    initialTriageVitals.map = request.diastolic + (request.systolic - request.diastolic) / 3.0;
-
                     initialTriageVitals.respiratoryRate = request.respiratoryRate;
-                    initialTriageVitals.bloodPressure = request.systolic + "/" + request.diastolic;
+
+                    applyBloodPressureFields(initialTriageVitals, request.systolic, request.diastolic);
 
                     initialTriageVitals.bmi = InitialTriageVitals.computeBmi(initialTriageVitals.weight, initialTriageVitals.height);
 
                     initialTriageVitalsRepository.persist(initialTriageVitals);
 
-                    //return new InitialTriageVitalsDTO(initialTriageVitals);
                     return Response.ok(new ResponseMessage("Vital Updated successfully", new InitialTriageVitalsDTO(initialTriageVitals))).build();
+                }).orElseThrow(() -> new WebApplicationException(NOT_FOUND, 404));
+    }
 
-                }).orElseThrow(() -> new WebApplicationException(NOT_FOUND,404));
+    private void applyBloodPressureFields(InitialTriageVitals vital, Double systolic, Double diastolic) {
+        vital.systolic = systolic;
+        vital.diastolic = diastolic;
+        if (systolic != null && diastolic != null) {
+            vital.map = diastolic + (systolic - diastolic) / 3.0;
+            vital.pulsePressure = systolic - diastolic;
+            vital.bloodPressure = systolic + "/" + diastolic;
+        } else {
+            vital.map = null;
+            vital.pulsePressure = null;
+            vital.bloodPressure = formatBloodPressureLabel(systolic, diastolic);
+        }
+    }
+
+    private String formatBloodPressureLabel(Double systolic, Double diastolic) {
+        if (systolic == null && diastolic == null) {
+            return "N/A";
+        }
+        if (systolic != null && diastolic != null) {
+            return systolic + "/" + diastolic;
+        }
+        if (systolic != null) {
+            return systolic + "/—";
+        }
+        return "—/" + diastolic;
     }
 
     @Transactional

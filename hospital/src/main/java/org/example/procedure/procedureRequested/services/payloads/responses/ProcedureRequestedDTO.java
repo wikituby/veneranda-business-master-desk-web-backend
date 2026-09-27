@@ -2,6 +2,7 @@ package org.example.procedure.procedureRequested.services.payloads.responses;
 
 import jakarta.json.bind.annotation.JsonbDateFormat;
 import org.example.procedure.procedureRequested.domains.ProcedureRequested;
+import org.example.procedure.procedure.services.ProcedureCategoryUtils;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -13,6 +14,7 @@ public class ProcedureRequestedDTO {
     //public String procedureRequestedType;
     public String procedureRequestedName;
     public String category;
+    public String categoryParent;
     public int quantity;
     public BigDecimal unitSellingPrice;
     public BigDecimal unitCostPrice;
@@ -52,6 +54,17 @@ public class ProcedureRequestedDTO {
             //this.procedureRequestedType = procedureRequested.procedureRequestedType;
             this.procedureRequestedName = procedureRequested.procedure != null ? procedureRequested.procedure.procedureName : procedureRequested.procedureRequestedName;
             this.category = procedureRequested.procedure != null && procedureRequested.procedure.category != null ? procedureRequested.procedure.category.name : procedureRequested.category;
+            if (procedureRequested.procedure != null && procedureRequested.procedure.parentCategory != null) {
+                this.categoryParent = procedureRequested.procedure.parentCategory.name;
+            } else if (procedureRequested.procedure != null
+                    && procedureRequested.procedure.category != null
+                    && procedureRequested.procedure.category.parent != null) {
+                this.categoryParent = procedureRequested.procedure.category.parent.name;
+            } else if (ProcedureCategoryUtils.isMchOrMaternityParentCategory(procedureRequested.category)) {
+                this.categoryParent = procedureRequested.category;
+            } else {
+                this.categoryParent = null;
+            }
             this.quantity = procedureRequested.quantity;
             this.unitSellingPrice = procedureRequested.unitSellingPrice;
             this.unitCostPrice = procedureRequested.procedure != null ? procedureRequested.procedure.unitCostPrice : BigDecimal.ZERO;

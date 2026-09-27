@@ -38,12 +38,26 @@ public class TreatmentRequestedDTO {
 
     public Long itemId;
 
+    public Long stockBatchId;
+
     public BigDecimal unitBuy;
 
+    public String status;
+    public Boolean paid;
+    public Boolean dispensed;
+    public Boolean administered;
+    public String instructions;
+    public String route;
+    public Long unitSellingModelId;
+    public Long diagnosisId;
+    public String diagnosisName;
 
     public TreatmentRequestedDTO(TreatmentRequested treatmentRequested) {
         this.id = treatmentRequested.id;
         this.itemId = treatmentRequested.itemId;
+        this.stockBatchId = treatmentRequested.stockBatch != null
+                ? treatmentRequested.stockBatch.id
+                : null;
 
         this.lastStockAtHand = treatmentRequested.lastStockAtHand;
         this.amountPerFrequencyValue = treatmentRequested.amountPerFrequencyValue;
@@ -72,7 +86,17 @@ public class TreatmentRequestedDTO {
         this.totalAmount = treatmentRequested.totalAmount;
         this.unitCostPrice = treatmentRequested.unitBuy;
         this.itemName = treatmentRequested.itemName;
-
+        this.status = treatmentRequested.status;
+        this.paid = treatmentRequested.paid == null || Boolean.TRUE.equals(treatmentRequested.paid);
+        this.dispensed = treatmentRequested.isDispensedOrGiven();
+        this.administered = Boolean.TRUE.equals(treatmentRequested.administered);
+        this.instructions = treatmentRequested.instructions;
+        this.route = treatmentRequested.route;
+        this.unitSellingModelId = treatmentRequested.unitSellingModelId;
+        if (treatmentRequested.diagnosis != null) {
+            this.diagnosisId = treatmentRequested.diagnosis.id;
+            this.diagnosisName = treatmentRequested.diagnosis.name;
+        }
     }
 }
 
